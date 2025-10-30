@@ -107,7 +107,7 @@ app.use((req, res, next) => {
   }
 
   // サーバーポートの設定
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",
