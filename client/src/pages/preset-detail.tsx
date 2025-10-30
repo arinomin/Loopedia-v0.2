@@ -14,12 +14,9 @@ import {
 import { formatDate } from "@/lib/utils";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { PresetWithDetails, CommentWithUser } from "@shared/schema";
+import { PresetWithDetails } from "@shared/schema";
 import { getEffectParameters } from "@/lib/effects";
-import { usePresetReactions } from "@/lib/hooks";
-import { Heart, Bookmark, Share2, Users, Edit, Trash2 } from "lucide-react";
-import { LoginModal } from "@/components/auth/login-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Share2, Edit, Trash2 } from "lucide-react";
 import { deletePreset, updatePresetName } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react"; // アイコンをインポート
@@ -66,17 +63,10 @@ export default function PresetDetail() {
   const { id } = useParams<{ id: string }>();
   const [_, navigate] = useLocation();
   const { toast } = useToast();
-  const [commentText, setCommentText] = useState("");
-  const [likedUsersOpen, setLikedUsersOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
 
-  // いいね・ブックマーク関連のフック
-  const { toggleLike, isTogglingLike, toggleBookmark, isTogglingBookmark } =
-    usePresetReactions(parseInt(id));
-
-  // Fetch preset details
   const {
     data: preset,
     isLoading,
@@ -85,56 +75,19 @@ export default function PresetDetail() {
     queryKey: [`/api/presets/${id}`],
   });
 
-  // Fetch comments
-  const { data: comments = [] } = useQuery<CommentWithUser[]>({
-    queryKey: [`/api/presets/${id}/comments`],
-  });
-
-  // Fetch current user
   const { data: currentUser } = useQuery<{
     id: number;
     username: string;
     nickname?: string;
-    avatarUrl?: string;
   } | null>({
     queryKey: ["/api/auth/me"],
   });
 
-  // プリセット取得後に名前の初期値を設定
   useEffect(() => {
     if (preset) {
       setNewPresetName(preset.name);
     }
   }, [preset]);
-
-  // ログインモーダルの状態
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [pendingAction, setPendingAction] = useState<
-    "like" | "bookmark" | "comment" | null
-  >(null);
-
-  // Add comment mutation
-  const commentMutation = useMutation({
-    mutationFn: (content: string) =>
-      apiRequest("POST", `/api/presets/${id}/comments`, { content }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [`/api/presets/${id}/comments`],
-      });
-      setCommentText("");
-      toast({
-        title: "コメント追加",
-        description: "コメントが正常に追加されました。",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "エラー",
-        description: "コメントの追加に失敗しました。",
-        variant: "destructive",
-      });
-    },
-  });
 
   // プリセット名更新ミューテーション
   const updateNameMutation = useMutation({
@@ -181,34 +134,6 @@ export default function PresetDetail() {
     },
   });
 
-  // ログイン成功後のアクション実行
-  const handleLoginSuccess = () => {
-    // 保留中のアクションを確認して実行
-    if (pendingAction === "like") {
-      toggleLike();
-    } else if (pendingAction === "bookmark") {
-      toggleBookmark();
-    } else if (pendingAction === "comment" && commentText.trim()) {
-      commentMutation.mutate(commentText);
-    }
-
-    // 保留中のアクションをリセット
-    setPendingAction(null);
-  };
-
-  const handleAddComment = () => {
-    if (!commentText.trim()) return;
-
-    if (!currentUser) {
-      // ログインモーダルを表示
-      setPendingAction("comment");
-      setIsLoginModalOpen(true);
-      return;
-    }
-
-    commentMutation.mutate(commentText);
-  };
-
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -246,18 +171,6 @@ export default function PresetDetail() {
 
   return (
     <div className="max-w-7xl mx-auto pb-6 px-4 sm:px-6 lg:px-8 sm:py-6">
-      {/* ログインモーダル */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => {
-          setIsLoginModalOpen(false);
-          setPendingAction(null);
-        }}
-        onLoginSuccess={handleLoginSuccess}
-        title="ログインが必要です"
-        description="この操作を行うにはログインまたは新規登録が必要です。"
-      />
-
       <div className="mb-2 sm:mb-6">
         <Link
           href="/"
@@ -295,126 +208,28 @@ export default function PresetDetail() {
               {/* ユーザー情報 */}
               <div className="flex items-center">
                 <div className="flex-shrink-0 mr-2">
-                  {preset.user.avatarUrl ? (
-                    <img
-                      src={preset.user.avatarUrl}
-                      alt={preset.user.nickname || preset.user.username}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">
-                      {(preset.user.nickname || preset.user.username)
-                        .substring(0, 2)
-                        .toUpperCase()}
-                    </div>
-                  )}
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">
+                    {(preset.user.nickname || preset.user.username)
+                      .substring(0, 2)
+                      .toUpperCase()}
+                  </div>
                 </div>
                 <div>
-                  <Link
-                    href={`/users/${preset.user.id}`}
-                    className="hover:text-primary"
-                  >
-                    <UserBadge
-                      user={preset.user}
-                      showUsername={false}
-                      size="sm"
-                      className="text-foreground"
-                    />
-                    <span className="text-muted-foreground">
-                      {" "}
-                      @{preset.user.username}
-                    </span>
-                  </Link>
+                  <UserBadge
+                    user={preset.user}
+                    showUsername={false}
+                    size="sm"
+                    className="text-foreground"
+                  />
+                  <span className="text-muted-foreground">
+                    {" "}
+                    @{preset.user.username}
+                  </span>
                   {/* 作成日時を小さく薄く表示 */}
                   <div className="text-xs text-muted-foreground">
                     {formatDate(preset.createdAt)}
                   </div>
                 </div>
-              </div>
-
-              {/* いいね・ブックマーク関連のUI */}
-              <div className="flex items-center mt-2 space-x-4">
-                {/* いいねボタン */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        onClick={() => {
-                          if (!currentUser) {
-                            // ログインモーダルを表示
-                            setPendingAction("like");
-                            setIsLoginModalOpen(true);
-                            return;
-                          }
-                          console.log(
-                            `Clicking like button. Current state: ${preset.isLiked}`,
-                          );
-                          toggleLike();
-                        }}
-                        disabled={isTogglingLike}
-                      >
-                        <Heart
-                          className={`h-5 w-5 ${
-                            preset.isLiked
-                              ? "fill-red-500 text-red-500"
-                              : "text-gray-500"
-                          }`}
-                        />
-                        <span className="text-sm">{preset.likeCount || 0}</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{preset.isLiked ? "いいねを取り消す" : "いいね"}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-
-                {/* ブックマークボタン */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        onClick={() => {
-                          if (!currentUser) {
-                            // ログインモーダルを表示
-                            setPendingAction("bookmark");
-                            setIsLoginModalOpen(true);
-                            return;
-                          }
-                          console.log(
-                            `Clicking bookmark button. Current state: ${preset.isBookmarked}`,
-                          );
-                          toggleBookmark();
-                        }}
-                        disabled={isTogglingBookmark}
-                      >
-                        <Bookmark
-                          className={`h-5 w-5 ${
-                            preset.isBookmarked
-                              ? "fill-blue-500 text-blue-500"
-                              : "text-gray-500"
-                          }`}
-                        />
-                        <span className="text-sm">
-                          {preset.bookmarkCount || 0}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {preset.isBookmarked
-                          ? "ブックマークを取り消す"
-                          : "ブックマーク"}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
               </div>
 
               {/* タイプをタグとして表示 */}
@@ -438,75 +253,6 @@ export default function PresetDetail() {
                 size="sm"
                 variant="ghost"
               />
-
-              {/* いいねしたユーザー一覧を表示するボタン */}
-              {preset.likedUsers && preset.likedUsers.length > 0 && (
-                <Sheet open={likedUsersOpen} onOpenChange={setLikedUsersOpen}>
-                  <SheetTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="flex items-center space-x-1 h-8 px-2"
-                    >
-                      <Users className="h-4 w-4 text-gray-500" />
-                      <span className="text-xs">いいねしたユーザー</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>いいねしたユーザー</SheetTitle>
-                      <SheetDescription>
-                        このプリセットをいいねしたユーザー一覧
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="mt-4 space-y-4">
-                      {preset.likedUsers.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center space-x-3"
-                        >
-                          <div className="flex-shrink-0">
-                            {user.avatarUrl ? (
-                              <img
-                                src={user.avatarUrl}
-                                alt={user.nickname || user.username}
-                                className="h-10 w-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <Avatar>
-                                <AvatarFallback>
-                                  {(user.nickname || user.username)
-                                    .substring(0, 2)
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium">
-                              <UserBadge
-                                user={user}
-                                showUsername={false}
-                                size="sm"
-                                className="text-foreground"
-                              />
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              @{user.username}
-                            </p>
-                            <Link
-                              href={`/users/${user.id}`}
-                              className="text-sm text-primary hover:underline"
-                            >
-                              プロフィールを見る
-                            </Link>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              )}
 
               {/* 編集ボタン - 自分のプリセットの場合のみ表示 */}
               {currentUser && currentUser.id === preset.userId && (
@@ -943,126 +689,6 @@ export default function PresetDetail() {
                 </>
               )}
             </dl>
-          </div>
-
-          {/* Comments Section */}
-          <div className="border-t border-gray-200 pt-6 mt-6">
-            <h3 className="text-lg font-medium">
-              コメント ({comments.length})
-            </h3>
-            <div className="mt-4 space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex space-x-3">
-                  <div className="flex-shrink-0">
-                    {comment.user.avatarUrl ? (
-                      <img
-                        src={comment.user.avatarUrl}
-                        alt={comment.user.nickname || comment.user.username}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary">
-                        {(comment.user.nickname || comment.user.username)
-                          .substring(0, 2)
-                          .toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">
-                      <Link
-                        href={`/users/${comment.user.id}`}
-                        className="hover:text-primary"
-                      >
-                        <UserBadge
-                          user={comment.user}
-                          showUsername={false}
-                          showNickname={true}
-                          size="sm"
-                          className="text-foreground"
-                        />
-                      </Link>
-                      <span className="text-xs text-muted-foreground ml-1">
-                        @{comment.user.username}
-                      </span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(comment.createdAt)}
-                    </p>
-                    <p className="text-sm mt-1">{comment.content}</p>
-                  </div>
-                </div>
-              ))}
-
-              {comments.length === 0 && (
-                <p className="text-muted-foreground text-sm">
-                  まだコメントはありません。
-                </p>
-              )}
-
-              {/* Add Comment */}
-              <div className="mt-6">
-                <div className="flex space-x-3">
-                  <div className="flex-shrink-0">
-                    {currentUser?.avatarUrl ? (
-                      <img
-                        src={currentUser.avatarUrl}
-                        alt={currentUser.nickname || currentUser.username}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary">
-                        {currentUser?.username
-                          ? (currentUser.nickname || currentUser.username)
-                              .substring(0, 2)
-                              .toUpperCase()
-                          : "?"}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div>
-                      <Textarea
-                        rows={3}
-                        placeholder="コメントを追加..."
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        disabled={!currentUser}
-                      />
-                      {!currentUser && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          コメントするには
-                          <button
-                            onClick={() => {
-                              setPendingAction("comment");
-                              setIsLoginModalOpen(true);
-                            }}
-                            className="text-primary underline bg-transparent border-none p-0 cursor-pointer"
-                          >
-                            ログイン
-                          </button>
-                          してください。
-                        </p>
-                      )}
-                    </div>
-                    <div className="mt-3 flex items-center justify-end">
-                      <Button
-                        onClick={handleAddComment}
-                        disabled={
-                          !currentUser ||
-                          !commentText.trim() ||
-                          commentMutation.isPending
-                        }
-                      >
-                        {commentMutation.isPending
-                          ? "送信中..."
-                          : "コメントする"}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>

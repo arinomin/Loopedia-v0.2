@@ -42,7 +42,7 @@ export default function PresetList() {
     }
   });
 
-  const { data: presets = [], isLoading } = useQuery({
+  const { data: presets = [], isLoading } = useQuery<PresetListType[]>({
     queryKey: ["/api/presets"],
     enabled: !!user,
   });
