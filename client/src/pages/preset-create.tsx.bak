@@ -1,0 +1,1104 @@
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ParameterInput } from "@/components/ui/parameter-input";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { EFFECTS, TRACK_A_EFFECTS, getEffectParameters, getEffectOptions } from "@/lib/effects";
+import {
+  EffectType,
+  EffectPosition,
+  ExtendedEffectPosition,
+  SwitchMode,
+  InsertType,
+} from "@shared/schema";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { LoginModal } from "@/components/auth/login-modal";
+import { ArrowLeft } from "lucide-react"; // アイコンをインポート
+
+interface EffectConfig {
+  position: EffectPosition | ExtendedEffectPosition;
+  effectType: string;
+  sw: boolean;
+  swMode: SwitchMode;
+  insert: InsertType;
+  parameters: Record<string, any>;
+}
+
+const INITIAL_EFFECT_CONFIG: EffectConfig = {
+  position: "A",
+  effectType: "LPF",
+  sw: true, // 初期値をONに変更
+  swMode: "TOGGLE",
+  insert: "ALL",
+  parameters: {},
+};
+
+export default function PresetCreate() {
+  const [_, navigate] = useLocation();
+  const location = useLocation();
+  const { toast } = useToast();
+
+  // 編集用のプリセットデータが渡されているか確認
+  const locationState = window.history.state?.state?.preset;
+  const sourcePreset = locationState || null;
+
+  // Note: Copy and Edit functionality has been removed as requested
+
+  // Fetch current user
+  // ログイン関連の状態
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
+  // ログインモーダルの状態
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // State for preset data
+  const [presetName, setPresetName] = useState(
+    sourcePreset ? `${sourcePreset.name} (コピー)` : "",
+  );
+  const [presetTags, setPresetTags] = useState(
+    sourcePreset
+      ? sourcePreset.tags
+          .map((tag: { id: number; name: string }) => tag.name)
+          .join(", ")
+      : "",
+  );
+  const [fxType, setFxType] = useState<EffectType>(
+    sourcePreset ? sourcePreset.type : "INPUT_FX",
+  );
+  const [currentTab, setCurrentTab] = useState<EffectPosition>("A");
+  
+  // INPUT/TRACKタブ管理用
+  const [fxGroupTab, setFxGroupTab] = useState<"input" | "track">("input");
+
+  // 初期エフェクト設定
+  const initialEffects: Record<EffectPosition, EffectConfig> = {
+    A: { ...INITIAL_EFFECT_CONFIG, position: "A", effectType: "LPF" },
+    B: { ...INITIAL_EFFECT_CONFIG, position: "B", effectType: "LPF" },
+    C: { ...INITIAL_EFFECT_CONFIG, position: "C", effectType: "LPF" },
+    D: { ...INITIAL_EFFECT_CONFIG, position: "D", effectType: "LPF" },
+  };
+  
+  // INPUT_TRACK_FX用の初期エフェクト設定
+  const initialInputEffects: Record<EffectPosition, EffectConfig> = {
+    A: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_A", effectType: "LPF" },
+    B: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_B", effectType: "LPF" },
+    C: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_C", effectType: "LPF" },
+    D: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_D", effectType: "LPF" },
+  };
+  
+  const initialTrackEffects: Record<EffectPosition, EffectConfig> = {
+    A: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_A", effectType: "LPF" },
+    B: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_B", effectType: "LPF" },
+    C: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_C", effectType: "LPF" },
+    D: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_D", effectType: "LPF" },
+  };
+
+  // INPUTエフェクト設定
+  const [inputEffects, setInputEffects] = useState<Record<EffectPosition, EffectConfig>>(initialInputEffects);
+  
+  // TRACKエフェクト設定
+  const [trackEffects, setTrackEffects] = useState<Record<EffectPosition, EffectConfig>>(initialTrackEffects);
+
+  // コピー元のプリセットからエフェクト設定を取得
+  const [effects, setEffects] = useState<Record<EffectPosition, EffectConfig>>(
+    () => {
+      if (!sourcePreset || !sourcePreset.effects) {
+        return initialEffects;
+      }
+
+      // コピー元のエフェクトをマップに変換
+      const sourceEffects = { ...initialEffects };
+
+      sourcePreset.effects.forEach((effect: any) => {
+        if (effect.position && ["A", "B", "C", "D"].includes(effect.position)) {
+          // パラメータがJSON文字列の場合はパースする
+          let parsedParameters = {};
+
+          try {
+            // 文字列の場合はパース、オブジェクトの場合はそのまま使用
+            if (effect.parameters) {
+              if (typeof effect.parameters === "string") {
+                parsedParameters = JSON.parse(effect.parameters);
+              } else {
+                parsedParameters = effect.parameters;
+              }
+            }
+          } catch (err) {
+            console.error("パラメータのパースに失敗:", err);
+          }
+
+          sourceEffects[effect.position as EffectPosition] = {
+            position: effect.position as EffectPosition,
+            effectType: effect.effectType || "LPF",
+            sw: effect.sw !== undefined ? effect.sw : true, // 初期値をONに変更
+            swMode: effect.swMode || "TOGGLE",
+            insert: effect.insert || "ALL",
+            parameters: parsedParameters,
+          };
+        }
+      });
+
+      return sourceEffects;
+    },
+  );
+
+  // 初期化時にすべてのエフェクトのパラメータを設定
+  useEffect(() => {
+    const initializedEffects = { ...effects };
+
+    // 各エフェクトポジションのパラメータを初期化
+    Object.keys(initializedEffects).forEach((position) => {
+      const effectPosition = position as EffectPosition;
+      const effectType = initializedEffects[effectPosition].effectType;
+
+      if (effectType && effectType !== "none") {
+        const parameters = getEffectParameters(effectType);
+        const currentParams =
+          initializedEffects[effectPosition].parameters || {};
+        const updatedParams: Record<string, any> = { ...currentParams };
+
+        // すべてのパラメータにデフォルト値を設定（現在の値を上書きしない）
+        parameters.forEach((param) => {
+          if (updatedParams[param.name] === undefined) {
+            updatedParams[param.name] = param.defaultValue;
+          }
+        });
+
+        initializedEffects[effectPosition].parameters = updatedParams;
+      }
+    });
+
+    setEffects(initializedEffects);
+  }, []);
+
+  // Create preset mutation
+  const createPresetMutation = useMutation({
+    mutationFn: async (data: {
+      preset: { name: string; type: EffectType };
+      tags: string[];
+      effects: Omit<EffectConfig, "parameters">[];
+    }) => {
+      console.log("Submitting preset with effects:", data.effects.length);
+      console.log("送信データの詳細:", JSON.stringify(data, null, 2));
+      
+      try {
+        // 送信前に各エフェクトのパラメータ形式を確認
+        data.effects.forEach((effect: any, index) => {
+          console.log(`エフェクト ${index} (${effect.position}) のパラメータ:`, {
+            type: typeof effect.parameters,
+            isString: typeof effect.parameters === 'string',
+            isValidJson: typeof effect.parameters === 'string' ? (() => {
+              try {
+                JSON.parse(effect.parameters);
+                return true;
+              } catch (e) {
+                return false;
+              }
+            })() : false,
+            value: effect.parameters
+          });
+        });
+        
+        const response = await apiRequest("POST", "/api/presets", data);
+        console.log("プリセット作成レスポンス:", response);
+        return response;
+      } catch (error: any) {
+        console.error("APIリクエスト失敗:", {
+          message: error.message,
+          response: error.response,
+          data: error.response?.data,
+        });
+        
+        // エラー情報をより詳細にログ出力
+        if (error.response) {
+          console.error("サーバーレスポンス:", {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            headers: error.response.headers,
+            data: error.response.data
+          });
+        }
+        
+        throw error;
+      }
+    },
+    onSuccess: (data) => {
+      console.log("プリセット作成成功:", data);
+      queryClient.invalidateQueries({ queryKey: ["/api/presets"] });
+      toast({
+        title: "プリセット作成成功",
+        description: "プリセットが正常に作成されました。",
+      });
+      navigate("/");
+    },
+    onError: (error: any) => {
+      console.error("Mutation error details:", error);
+      
+      // エラーオブジェクトの構造を詳細にログ
+      console.error("エラーオブジェクト構造:", {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        response: error.response ? {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        } : 'レスポンスなし'
+      });
+      
+      // APIからのエラーレスポンスを解析
+      let errorMessage = "プリセットの作成に失敗しました。";
+      let errorDetail = "";
+      
+      try {
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          console.log("エラーレスポンスデータ:", errorData);
+          
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+          
+          if (errorData.error) {
+            errorDetail = errorData.error;
+          }
+          
+          if (errorData.errors && Array.isArray(errorData.errors)) {
+            errorDetail += " " + errorData.errors.map((e: any) => e.message || e).join(", ");
+          }
+        }
+      } catch (e) {
+        console.error("エラーレスポンス解析エラー:", e);
+      }
+      
+      // エラーの種類に応じたメッセージを表示
+      if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+        errorMessage = "ネットワークエラー: サーバーに接続できません。";
+      } else if (error.response?.status === 400) {
+        errorMessage = "入力データが不正です。" + (errorDetail ? ` ${errorDetail}` : "");
+      } else if (error.response?.status === 401) {
+        errorMessage = "認証エラー: ログインが必要です。";
+      } else if (error.response?.status === 500) {
+        errorMessage = "サーバーエラーが発生しました。" + (errorDetail ? ` ${errorDetail}` : "");
+      }
+      
+      toast({
+        title: "エラー",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleTabChange = (value: string) => {
+    setCurrentTab(value as EffectPosition);
+  };
+
+  // 通常のエフェクト更新関数
+  const updateEffect = (
+    position: EffectPosition,
+    updates: Partial<EffectConfig>,
+  ) => {
+    setEffects((prev) => ({
+      ...prev,
+      [position]: {
+        ...prev[position],
+        ...updates,
+      },
+    }));
+  };
+  
+  // INPUTエフェクト更新関数
+  const updateInputEffect = (
+    position: EffectPosition,
+    updates: Partial<EffectConfig>,
+  ) => {
+    setInputEffects((prev) => ({
+      ...prev,
+      [position]: {
+        ...prev[position],
+        ...updates,
+      },
+    }));
+  };
+  
+  // TRACKエフェクト更新関数
+  const updateTrackEffect = (
+    position: EffectPosition,
+    updates: Partial<EffectConfig>,
+  ) => {
+    setTrackEffects((prev) => ({
+      ...prev,
+      [position]: {
+        ...prev[position],
+        ...updates,
+      },
+    }));
+  };
+
+  const handleEffectTypeChange = (value: string) => {
+    const effect = effects[currentTab];
+
+    // エフェクトタイプを変更し、新しいエフェクトタイプのすべてのパラメータをデフォルト値で初期化する
+    const parameters = getEffectParameters(value);
+    const defaultParams: Record<string, any> = {};
+
+    // 各パラメータのデフォルト値を設定
+    parameters.forEach((param) => {
+      defaultParams[param.name] = param.defaultValue;
+    });
+
+    // エフェクト設定を更新
+    updateEffect(currentTab, {
+      effectType: value,
+      parameters: defaultParams,
+    });
+  };
+
+  const handleParameterChange = (name: string, value: any) => {
+    const effect = effects[currentTab];
+
+    updateEffect(currentTab, {
+      parameters: {
+        ...effect.parameters,
+        [name]: value,
+      },
+    });
+  };
+
+  const getAvailableEffects = () => {
+    // TRACK FXかつFX Aの場合のみTRACK_A_EFFECTSを含める
+    if (fxType === "TRACK_FX" && currentTab === "A") {
+      // 通常のエフェクトとTRACK専用エフェクトを結合して重複を取り除く
+      const allEffects = new Set([...Object.keys(EFFECTS), ...TRACK_A_EFFECTS]);
+      return Array.from(allEffects);
+    }
+
+    return Object.keys(EFFECTS).filter(
+      (effect) => !TRACK_A_EFFECTS.includes(effect),
+    );
+  };
+
+  const getInsertOptions = () => {
+    if (fxType === "INPUT_FX") {
+      return ["ALL", "MIC1", "MIC2", "INST1", "INST2"];
+    } else {
+      return ["ALL", "TRACK1", "TRACK2", "TRACK3", "TRACK4", "TRACK5"];
+    }
+  };
+
+  // プリセットの検証
+  const validatePreset = () => {
+    if (!presetName.trim()) {
+      toast({
+        title: "入力エラー",
+        description: "プリセット名を入力してください。",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check if at least one effect is configured
+    const configuredEffects = Object.values(effects).filter(
+      (effect) => effect.effectType !== "none",
+    );
+
+    if (configuredEffects.length === 0) {
+      toast({
+        title: "入力エラー",
+        description: "少なくとも1つのエフェクトを設定してください。",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // ログイン成功後にプリセットを保存する
+  const savePresetAfterLogin = () => {
+    if (!validatePreset()) return;
+
+    // Process tags
+    const tags = presetTags
+      .split(",")
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => tag !== "");
+
+    // Prepare effects data
+    let configuredEffects;
+    
+    if (fxType === "INPUT_TRACK_FX") {
+      // INPUT側のエフェクト
+      const inputConfiguredEffects = Object.values(inputEffects).filter(
+        (effect) => effect.effectType !== "none",
+      );
+      
+      // TRACK側のエフェクト
+      const trackConfiguredEffects = Object.values(trackEffects).filter(
+        (effect) => effect.effectType !== "none",
+      );
+      
+      // 両方を結合
+      configuredEffects = [...inputConfiguredEffects, ...trackConfiguredEffects];
+    } else {
+      // 通常のエフェクト
+      configuredEffects = Object.values(effects).filter(
+        (effect) => effect.effectType !== "none",
+      );
+    }
+
+    const effectsData = configuredEffects.map((effect) => {
+      let processedParameters;
+      
+      try {
+        // パラメータの処理を詳細なログとともに実行
+        console.log(`処理前のパラメータ (${effect.position}):`, {
+          type: typeof effect.parameters,
+          value: effect.parameters
+        });
+        
+        // パラメータの完全性を確保
+        // すでにJSON文字列の場合はそのまま、オブジェクトならJSON文字列に変換
+        if (typeof effect.parameters === 'string') {
+          // 文字列が有効なJSONか確認し、無効ならオブジェクトに変換して再度文字列化
+          const parsedParams = JSON.parse(effect.parameters);
+          // パース結果を確認
+          console.log(`パラメータ文字列のパース結果 (${effect.position}):`, parsedParams);
+          processedParameters = JSON.stringify(parsedParams);
+        } else {
+          // オブジェクトの場合はそのままJSON文字列化
+          if (effect.parameters === null || effect.parameters === undefined) {
+            console.warn(`パラメータがnullまたはundefined (${effect.position})`);
+            processedParameters = "{}";
+          } else {
+            processedParameters = JSON.stringify(effect.parameters);
+          }
+        }
+        
+        console.log(`処理後のパラメータ (${effect.position}):`, processedParameters);
+      } catch (e) {
+        console.error("パラメータ処理エラー:", {
+          position: effect.position,
+          effectType: effect.effectType,
+          originalParams: effect.parameters,
+          error: e
+        });
+        
+        // エラーの場合は空のオブジェクトを使用
+        processedParameters = "{}";
+      }
+      
+      // データの整合性を最終確認
+      if (typeof processedParameters !== 'string') {
+        console.warn(`パラメータが文字列でない (${effect.position}):`, processedParameters);
+        processedParameters = JSON.stringify({});
+      }
+      
+      return {
+        position: effect.position,
+        effectType: effect.effectType,
+        sw: effect.sw,
+        swMode: effect.swMode,
+        insert: effect.insert,
+        parameters: processedParameters,
+      };
+    });
+
+    createPresetMutation.mutate({
+      preset: {
+        name: presetName,
+        type: fxType,
+      },
+      tags,
+      effects: effectsData,
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // 未ログインの場合はログインモーダルを表示
+    if (!currentUser) {
+      // 入力内容を検証
+      if (validatePreset()) {
+        setIsLoginModalOpen(true);
+      }
+      return;
+    }
+
+    // ログイン済みの場合はそのまま保存
+    savePresetAfterLogin();
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {/* ログインモーダル */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={savePresetAfterLogin}
+        title="ログインが必要です"
+        description="プリセットを保存するにはログインまたは新規登録が必要です。"
+      />
+
+      <div className="mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          プリセット一覧に戻る
+        </Link>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold">
+            プリセット新規作成
+          </CardTitle>
+          <CardDescription>
+            プリセットの名前、タイプ、効果設定を入力してください。
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+              <div className="sm:col-span-4">
+                <Label htmlFor="preset-name">プリセット名</Label>
+                <div className="mt-1">
+                  <Input
+                    id="preset-name"
+                    value={presetName}
+                    onChange={(e) => setPresetName(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-4">
+                <Label htmlFor="preset-tags">タグ（カンマ区切り）</Label>
+                <div className="mt-1">
+                  <Input
+                    id="preset-tags"
+                    placeholder="例: ボーカル, ハーモニー, ライブ"
+                    value={presetTags}
+                    onChange={(e) => setPresetTags(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="sm:col-span-6">
+                <Label>FXタイプ</Label>
+                <div className="mt-1">
+                  <RadioGroup
+                    value={fxType}
+                    onValueChange={(value) => {
+                      const newFxType = value as EffectType;
+                      setFxType(newFxType);
+
+                      // INPUT FXに変更された場合、TRACK専用エフェクトをリセット
+                      if (newFxType === "INPUT_FX") {
+                        // 現在のエフェクト設定をコピー
+                        const updatedEffects = { ...effects };
+
+                        // FX Aで専用エフェクトが選択されている場合はリセット
+                        if (
+                          TRACK_A_EFFECTS.includes(updatedEffects.A.effectType)
+                        ) {
+                          updatedEffects.A = {
+                            ...INITIAL_EFFECT_CONFIG,
+                            position: "A",
+                            effectType: "LPF",
+                          };
+
+                          // パラメータも初期化
+                          const parameters = getEffectParameters("LPF");
+                          const defaultParams: Record<string, any> = {};
+                          parameters.forEach((param) => {
+                            defaultParams[param.name] = param.defaultValue;
+                          });
+                          updatedEffects.A.parameters = defaultParams;
+
+                          setEffects(updatedEffects);
+                        }
+                      }
+                    }}
+                    className="flex space-x-6 flex-wrap"
+                  >
+                    <div className="flex items-center space-x-2 mr-4 mb-2">
+                      <RadioGroupItem value="INPUT_FX" id="input-fx" />
+                      <Label htmlFor="input-fx">INPUT FX</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 mr-4 mb-2">
+                      <RadioGroupItem value="TRACK_FX" id="track-fx" />
+                      <Label htmlFor="track-fx">TRACK FX</Label>
+                    </div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <RadioGroupItem value="INPUT_TRACK_FX" id="input-track-fx" />
+                      <Label htmlFor="input-track-fx">INPUT FX & TRACK FX</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              </div>
+            </div>
+
+            {/* Effect Tabs */}
+            <div className="mt-8">
+              {fxType === "INPUT_TRACK_FX" ? (
+                <Tabs defaultValue="input" className="w-full" onValueChange={(value) => setFxGroupTab(value as "input" | "track")}>
+                  <TabsList className="w-full sm:w-auto mb-4">
+                    <TabsTrigger value="input">INPUT FX</TabsTrigger>
+                    <TabsTrigger value="track">TRACK FX</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="input">
+                    <div className="mb-2 text-sm text-muted-foreground">
+                      INPUT側のエフェクト設定
+                    </div>
+                    <Tabs value={currentTab} onValueChange={handleTabChange}>
+                      <TabsList className="w-full sm:w-auto">
+                        <TabsTrigger value="A">FX A</TabsTrigger>
+                        <TabsTrigger value="B">FX B</TabsTrigger>
+                        <TabsTrigger value="C">FX C</TabsTrigger>
+                        <TabsTrigger value="D">FX D</TabsTrigger>
+                      </TabsList>
+
+                      {["A", "B", "C", "D"].map((position) => (
+                        <TabsContent key={position} value={position} className="mt-4">
+                          {/* INPUT FXのエフェクトコントロールパネル */}
+                          <Collapsible className="bg-muted p-4 rounded-md mb-6">
+                            <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                              <h4 className="text-md font-medium">Effect Control (INPUT)</h4>
+                              <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                  <Label className="mb-2">SW</Label>
+                                  <div className="flex items-center">
+                                    <Switch
+                                      checked={inputEffects[position as EffectPosition].sw}
+                                      onCheckedChange={(checked) =>
+                                        updateInputEffect(position as EffectPosition, {
+                                          sw: checked,
+                                        })
+                                      }
+                                    />
+                                    <span className="ml-2">
+                                      {inputEffects[position as EffectPosition].sw ? "ON" : "OFF"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <Label>エフェクトタイプ</Label>
+                                  <Select
+                                    value={inputEffects[position as EffectPosition].effectType}
+                                    onValueChange={(value) => {
+                                      const parameters = getEffectParameters(value);
+                                      const defaultParams: Record<string, any> = {};
+                                      parameters.forEach((param) => {
+                                        defaultParams[param.name] = param.defaultValue;
+                                      });
+
+                                      updateInputEffect(position as EffectPosition, {
+                                        effectType: value,
+                                        parameters: defaultParams,
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select Effect" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {EFFECTS.map((effect) => (
+                                        <SelectItem key={effect.value} value={effect.value}>
+                                          {effect.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </TabsContent>
+                  
+                  <TabsContent value="track">
+                    <div className="mb-2 text-sm text-muted-foreground">
+                      TRACK側のエフェクト設定
+                    </div>
+                    <Tabs value={currentTab} onValueChange={handleTabChange}>
+                      <TabsList className="w-full sm:w-auto">
+                        <TabsTrigger value="A">FX A</TabsTrigger>
+                        <TabsTrigger value="B">FX B</TabsTrigger>
+                        <TabsTrigger value="C">FX C</TabsTrigger>
+                        <TabsTrigger value="D">FX D</TabsTrigger>
+                      </TabsList>
+
+                      {["A", "B", "C", "D"].map((position) => (
+                        <TabsContent key={position} value={position} className="mt-4">
+                          {/* TRACK FXのエフェクトコントロールパネル */}
+                          <Collapsible className="bg-muted p-4 rounded-md mb-6">
+                            <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                              <h4 className="text-md font-medium">Effect Control (TRACK)</h4>
+                              <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div>
+                                  <Label className="mb-2">SW</Label>
+                                  <div className="flex items-center">
+                                    <Switch
+                                      checked={trackEffects[position as EffectPosition].sw}
+                                      onCheckedChange={(checked) =>
+                                        updateTrackEffect(position as EffectPosition, {
+                                          sw: checked,
+                                        })
+                                      }
+                                    />
+                                    <span className="ml-2">
+                                      {trackEffects[position as EffectPosition].sw ? "ON" : "OFF"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <Label>エフェクトタイプ</Label>
+                                  <Select
+                                    value={trackEffects[position as EffectPosition].effectType}
+                                    onValueChange={(value) => {
+                                      const parameters = getEffectParameters(value);
+                                      const defaultParams: Record<string, any> = {};
+                                      parameters.forEach((param) => {
+                                        defaultParams[param.name] = param.defaultValue;
+                                      });
+
+                                      updateTrackEffect(position as EffectPosition, {
+                                        effectType: value,
+                                        parameters: defaultParams,
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select Effect" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {EFFECTS.map((effect) => (
+                                        <SelectItem key={effect.value} value={effect.value}>
+                                          {effect.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <Tabs value={currentTab} onValueChange={handleTabChange}>
+                  <TabsList className="w-full sm:w-auto">
+                    <TabsTrigger value="A">FX A</TabsTrigger>
+                    <TabsTrigger value="B">FX B</TabsTrigger>
+                    <TabsTrigger value="C">FX C</TabsTrigger>
+                    <TabsTrigger value="D">FX D</TabsTrigger>
+                  </TabsList>
+
+                  {["A", "B", "C", "D"].map((position) => (
+                    <TabsContent key={position} value={position} className="mt-4">
+                    {/* Effect Control Panel */}
+                    <Collapsible className="bg-muted p-4 rounded-md mb-6">
+                      <CollapsibleTrigger className="flex items-center justify-between w-full group">
+                        <h4 className="text-md font-medium">Effect Control</h4>
+                        <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                          <div>
+                            <Label className="mb-2">SW</Label>
+                            <div className="flex items-center">
+                              <Switch
+                                checked={effects[position as EffectPosition].sw}
+                                onCheckedChange={(checked) =>
+                                  updateEffect(position as EffectPosition, {
+                                    sw: checked,
+                                  })
+                                }
+                              />
+                              <span className="ml-2 text-sm text-muted-foreground">
+                                {effects[position as EffectPosition].sw
+                                  ? "ON"
+                                  : "OFF"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label className="mb-2">SW MODE</Label>
+                            <div className="flex space-x-4">
+                              <RadioGroup
+                                value={
+                                  effects[position as EffectPosition].swMode
+                                }
+                                onValueChange={(value) =>
+                                  updateEffect(position as EffectPosition, {
+                                    swMode: value as SwitchMode,
+                                  })
+                                }
+                                className="flex space-x-4"
+                              >
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="TOGGLE"
+                                    id={`toggle-mode-${position}`}
+                                  />
+                                  <Label htmlFor={`toggle-mode-${position}`}>
+                                    TOGGLE
+                                  </Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <RadioGroupItem
+                                    value="MOMENT"
+                                    id={`moment-mode-${position}`}
+                                  />
+                                  <Label htmlFor={`moment-mode-${position}`}>
+                                    MOMENT
+                                  </Label>
+                                </div>
+                              </RadioGroup>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label
+                              htmlFor={`insert-select-${position}`}
+                              className="mb-2"
+                            >
+                              INSERT
+                            </Label>
+                            <Select
+                              value={effects[position as EffectPosition].insert}
+                              onValueChange={(value) =>
+                                updateEffect(position as EffectPosition, {
+                                  insert: value as InsertType,
+                                })
+                              }
+                            >
+                              <SelectTrigger id={`insert-select-${position}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getInsertOptions().map((option) => (
+                                  <SelectItem key={option} value={option}>
+                                    {option}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+
+                    {/* Effect Selection and Parameters */}
+                    <div>
+                      <div className="mb-4">
+                        <Label
+                          htmlFor={`effect-select-${position}`}
+                          className="mb-2"
+                        >
+                          エフェクト
+                        </Label>
+                        <Select
+                          value={effects[position as EffectPosition].effectType}
+                          onValueChange={handleEffectTypeChange}
+                        >
+                          <SelectTrigger id={`effect-select-${position}`}>
+                            <SelectValue placeholder="エフェクトを選択" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              エフェクトを選択
+                            </SelectItem>
+                            {getAvailableEffects().map((effect) => (
+                              <SelectItem key={effect} value={effect}>
+                                {effect}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Parameters Section */}
+                      {effects[position as EffectPosition].effectType &&
+                        effects[position as EffectPosition].effectType !==
+                          "none" && (
+                          <div className="mt-6">
+                            <h4 className="text-md font-medium mb-4">
+                              パラメータ設定
+                            </h4>
+
+                            {/* 通常のパラメータセクション */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                              {getEffectParameters(
+                                effects[position as EffectPosition].effectType,
+                              )
+                                .filter(
+                                  (param) => !param.name.startsWith("SEQ_"),
+                                )
+                                .map((param) => (
+                                  <ParameterInput
+                                    key={param.name}
+                                    name={param.name}
+                                    config={param}
+                                    value={
+                                      effects[position as EffectPosition]
+                                        .parameters[param.name] ||
+                                      param.defaultValue
+                                    }
+                                    onChange={handleParameterChange}
+                                  />
+                                ))}
+                            </div>
+
+                            {/* シーケンサーコントロールセクション */}
+                            {getEffectParameters(
+                              effects[position as EffectPosition].effectType,
+                            ).some((param) =>
+                              param.name.startsWith("SEQ_"),
+                            ) && (
+                              <>
+                                <h4 className="text-md font-medium mt-6 mb-4">
+                                  シーケンサー設定
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                  {getEffectParameters(
+                                    effects[position as EffectPosition]
+                                      .effectType,
+                                  )
+                                    .filter((param) =>
+                                      [
+                                        "SEQ_SW",
+                                        "SEQ_SYNC",
+                                        "SEQ_RETRIG",
+                                        "SEQ_TARGET",
+                                        "SEQ_RATE",
+                                        "SEQ_MAX",
+                                      ].includes(param.name),
+                                    )
+                                    .map((param) => (
+                                      <ParameterInput
+                                        key={param.name}
+                                        name={param.name}
+                                        config={param}
+                                        value={
+                                          effects[position as EffectPosition]
+                                            .parameters[param.name] ||
+                                          param.defaultValue
+                                        }
+                                        onChange={handleParameterChange}
+                                        useSwitch={[
+                                          "SEQ_SW",
+                                          "SEQ_SYNC",
+                                          "SEQ_RETRIG",
+                                        ].includes(param.name)}
+                                      />
+                                    ))}
+                                </div>
+
+                                {/* シーケンサー値セクション */}
+                                <h4 className="text-md font-medium mt-6 mb-4">
+                                  シーケンサー値
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                  {getEffectParameters(
+                                    effects[position as EffectPosition]
+                                      .effectType,
+                                  )
+                                    .filter((param) =>
+                                      param.name.startsWith("SEQ_VAL"),
+                                    )
+                                    .map((param) => (
+                                      <ParameterInput
+                                        key={param.name}
+                                        name={param.name}
+                                        config={param}
+                                        value={
+                                          effects[position as EffectPosition]
+                                            .parameters[param.name] ||
+                                          param.defaultValue
+                                        }
+                                        onChange={handleParameterChange}
+                                      />
+                                    ))}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        )}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
+
+            <div className="flex justify-end mt-8 gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate("/")}
+              >
+                キャンセル
+              </Button>
+              <Button
+                type="submit"
+                disabled={!presetName.trim() || createPresetMutation.isPending}
+              >
+                {createPresetMutation.isPending
+                  ? "保存中..."
+                  : "プリセットを保存"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* モバイル用のキーボード表示対応 */
+@media (max-width: 640px) {
+  .mobile-keyboard-fix {
+    padding-bottom: env(safe-area-inset-bottom, 200px);
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* プルダウン更新のスタイル */
+.ptr-element {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  color: #aaa;
+  z-index: 10;
+  text-align: center;
+  height: 50px;
+  transition: all .5s cubic-bezier(0.000, 0.000, 0.250, 1.250);
+}
+
+.ptr-element .ptr-content {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  top: 12px;
+  font-size: 14px;
+}
+
+.ptr-refresh .ptr-icon:before {
+  animation: ptr-loading .8s infinite linear;
+}
+
+.ptr-pulling .ptr-icon:before {
+  transition: transform .3s ease;
+}
+
+@keyframes ptr-loading {
+  0% {
+    transform: rotate(0);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}

@@ -1,0 +1,1943 @@
+"LPF_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "𝅗𝅥"
+    },
+    "LPF_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "LPF_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "LPF_CUTOFF": {
+        "display_name": "CUTOFF",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "LPF_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "BPF_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "𝅗𝅥"
+    },
+    "BPF_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "BPF_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "BPF_CUTOFF": {
+        "display_name": "CUTOFF",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "BPF_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "HPF_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "𝅗𝅥"
+    },
+    "HPF_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "HPF_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "HPF_CUTOFF": {
+        "display_name": "CUTOFF",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "HPF_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "PHASER_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "𝅗𝅥"
+    },
+    "PHASER_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PHASER_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PHASER_MANUAL": {
+        "display_name": "MANUAL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PHASER_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "PHASER_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "PHASER_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "PHASER_STAGE": {
+        "display_name": "STAGE",
+        "type": "options",
+        "options": ["4", "8", "12", "BI-PHASE"],
+        "default": "8"
+    },
+    "FLANGER_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "1MEAS"
+    },
+    "FLANGER_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "FLANGER_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "FLANGER_MANUAL": {
+        "display_name": "MANUAL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "FLANGER_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "FLANGER_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "FLANGER_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "FLANGER_SEPARATION": {
+        "display_name": "SEPARATION",
+        "type": "range",
+        "range": (0, 100),
+        "default": 0
+    },
+    "SYNTH_FREQUENCY": {
+        "display_name": "FREQUENCY",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SYNTH_RESONANCE": {
+        "display_name": "RESONANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SYNTH_DECAY": {
+        "display_name": "DECAY",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SYNTH_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "LOFI_BITDEPTH": {
+        "display_name": "BITDEPTH",
+        "type": "options",
+        "options": ["OFF"] + [str(i) for i in range(31, 0, -1)],
+        "default": "8"
+    },
+    "LOFI_SAMPLERATE": {
+        "display_name": "SAMPLERATE",
+        "type": "options",
+        "options": ["OFF"] + [f"1/{i}" for i in range(2, 33)],
+        "default": "1/4"
+    },
+    "LOFI_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "RADIO_LOFI": {
+        "display_name": "LO-FI",
+        "type": "range",
+        "range": (1, 10),
+        "default": 5
+    },
+    "RADIO_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "RINGMOD_FREQUENCY": {
+        "display_name": "FREQUENCY",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "RINGMOD_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "RINGMOD_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "G2B_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "G2B_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "SUSTAINER_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SUSTAINER_RELEASE": {
+        "display_name": "RELEASE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SUSTAINER_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SUSTAINER_LOW_GAIN": {
+        "display_name": "LOW GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "SUSTAINER_HI_GAIN": {
+        "display_name": "HI GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "SUSTAINER_SUSTAIN": {
+        "display_name": "SUSTAIN",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "AUTORIFF_PHARASE": {
+        "display_name": "PHARASE",
+        "type": "options",
+        "options": [f"P{i:02d}" for i in range(1, 31)],
+        "default": "P01"
+    },
+    "AUTORIFF_TEMPO": {
+        "display_name": "TEMPO",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "QUARTER"
+    },
+    "AUTORIFF_HOLD": {
+        "display_name": "HOLD",
+        "type": "on_off",
+        "default": "OFF"
+    },
+    "AUTORIFF_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "AUTORIFF_LOOP": {
+        "display_name": "LOOP",
+        "type": "on_off",
+        "default": "ON"
+    },
+    "AUTORIFF_KEY": {
+        "display_name":
+        "KEY",
+        "type":
+        "options",
+        "options": [
+            "C(Am)", "D♭(B♭m)", "D(Bm)", "E♭(Cm)", "E(C♯m)", "F(Dm)",
+            "F♯(D♯m)", "G(Em)", "A♭(Fm)", "A(F♯m)", "B♭(Gm)", "B(G♯m)"
+        ],
+        "default":
+        "C(Am)"
+    },
+    "AUTORIFF_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SLOWGEAR_SENS": {
+        "display_name": "SENS",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SLOWGEAR_RISE_TIME": {
+        "display_name": "RISE TIME",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SLOWGEAR_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "SLOWGEAR_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "TRANSPOSE_TRANS": {
+        "display_name": "TRANS",
+        "type": "signed_range",
+        "range": (-12, 12),
+        "default": 0,
+        "show_plus": True
+    },
+    "TRANSPOSE_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "PITCHBEND_PITCH": {
+        "display_name": "PITCH",
+        "type": "signed_range",
+        "range": (-30, 40),
+        "default": 40,
+        "show_plus": True,
+        "suffix": "CT"
+    },
+    "PITCHBEND_BEND": {
+        "display_name": "BEND",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PITCHBEND_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "ROBOT_ROBOT_NOTE": {
+        "display_name":
+        "ROBOT_NOTE",
+        "type":
+        "options",
+        "options":
+        ["C", "D♭", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"],
+        "default":
+        "C"
+    },
+    "ROBOT_FORMANT": {
+        "display_name": "FORMANT",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "ROBOT_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "ELECTRIC_SHIFT": {
+        "type": "signed_range",
+        "range": (-12, 12),
+        "default": 0,
+        "show_plus": True
+    },
+    "ELECTRIC_FORMANT": {
+        "display_name": "FORMANT",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "ELECTRIC_SPEED": {
+        "display_name": "SPEED",
+        "type": "range",
+        "range": (0, 10),
+        "default": 5
+    },
+    "ELECTRIC_STABILITY": {
+        "display_name": "STABILITY",
+        "type": "signed_range",
+        "range": (-10, 10),
+        "default": 0,
+        "show_plus": True
+    },
+    "ELECTRIC_SCALE": {
+        "display_name":
+        "SCALE",
+        "type":
+        "options",
+        "options": [
+            "CHROMATIC", "C(Am)", "D♭(B♭m)", "D(Bm)", "E♭(Cm)", "E(C♯m)",
+            "F(Dm)", "F♯(D♯m)", "G(Em)", "A♭(Fm)", "A(F♯m)", "B♭(Gm)", "B(G♯m)"
+        ],
+        "default":
+        "CHROMATIC"
+    },
+    "HRMMANUAL_VOICE": {
+        "display_name":
+        "VOICE",
+        "type":
+        "options",
+        "options": [
+            "OCT-", "-6TH", "-5TH", "-4TH", "-3RD", "UNISON", "+3RD", "+4TH",
+            "+5TH", "+6TH", "OCT+"
+        ],
+        "default":
+        "+3RD"
+    },
+    "HRMMANUAL_FORMANT": {
+        "display_name": "FORMANT",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "HRMMANUAL_PAN": {
+        "display_name": "PAN",
+        "type": "options",
+        "options": PAN_POSITIONS,
+        "default": "CENTER"
+    },
+    "HRMMANUAL_KEY": {
+        "display_name":
+        "KEY",
+        "type":
+        "options",
+        "options": [
+            "C(Am)", "D♭(B♭m)", "D(Bm)", "E♭(Cm)", "E(C♯m)", "F(Dm)",
+            "F♯(D♯m)", "G(Em)", "A♭(Fm)", "A(F♯m)", "B♭(Gm)", "B(G♯m)"
+        ],
+        "default":
+        "C(Am)"
+    },
+    "HRMMANUAL_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "HRMMANUAL_HRM_LEVEL": {
+        "display_name": "HRM LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 80
+    },
+    "HRMAUTO_VOICE": {
+        "display_name": "VOICE",
+        "type": "options",
+        "options":
+        ["OCT-", "LOWER", "LOW", "UNISON", "HIGH", "HIGHER", "OCT+"],
+        "default": "HIGH"
+    },
+    "HRMAUTO_FORMANT": {
+        "display_name": "FORMANT",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "HRMAUTO_PAN": {
+        "display_name": "PAN",
+        "type": "options",
+        "options": PAN_POSITIONS,
+        "default": "CENTER"
+    },
+    "HRMAUTO_HRM_MODE": {
+        "display_name": "HRM MODE",
+        "type": "options",
+        "options": ["AUTO", "HYBRID"],
+        "default": "AUTO"
+    },
+    "HRMAUTO_KEY": {
+        "display_name":
+        "KEY",
+        "type":
+        "options",
+        "options": [
+            "C(Am)", "D♭(B♭m)", "D(Bm)", "E♭(Cm)", "E(C♯m)", "F(Dm)",
+            "F♯(D♯m)", "G(Em)", "A♭(Fm)", "A(F♯m)", "B♭(Gm)", "B(G♯m)"
+        ],
+        "default":
+        "C(Am)"
+    },
+    "HRMAUTO_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "HRMAUTO_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 80
+    },
+    "VOCODER_CARRIER": {
+        "display_name":
+        "CARRIER",
+        "type":
+        "options",
+        "options": [
+            "MIC1", "MIC2", "INST1", "INST2", "TRACK 1", "TRACK 2", "TRACK 3",
+            "TRACK 4", "TRACK 5"
+        ],
+        "default":
+        "TRACK 1"
+    },
+    "VOCODER_TONE": {
+        "display_name": "TONE",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "VOCODER_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "VOCODER_MOD_SENS": {
+        "display_name": "MOD SENS",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "VOCODER_CARRIER_THRU": {
+        "display_name": "CARRIER THRU",
+        "type": "on_off",
+        "default": "ON"
+    },
+    "VOCODER_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "OSCVOC_CARRIER": {
+        "display_name":
+        "CARRIER",
+        "type":
+        "options",
+        "options": [
+            "MIC1", "MIC2", "INST1", "INST2", "TRACK 1", "TRACK 2", "TRACK 3",
+            "TRACK 4", "TRACK 5"
+        ],
+        "default":
+        "TRACK 1"
+    },
+    "OSCVOC_TONE": {
+        "display_name": "TONE",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "OSCVOC_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "OSCVOC_OCTAVE": {
+        "display_name": "OCTAVE",
+        "type": "options",
+        "options": ["-20CT", "-10CT", "0", "+10CT"],
+        "default": "0"
+    },
+    "OSCVOC_MOD_SENS": {
+        "display_name": "MOD SENS",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "OSCVOC_RELEASE": {
+        "display_name": "RELEASE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "OSCVOC_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "OSCBOT_OSC": {
+        "display_name": "OSC",
+        "type": "options",
+        "options": ["SAW", "VINTAGE SAW", "DETUNE SAW", "SQUARE", "RECT"],
+        "default": "SAW"
+    },
+    "OSCBOT_TONE": {
+        "display_name": "TONE",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "OSCBOT_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "OSCBOT_NOTE": {
+        "display_name": "NOTE",
+        "type": "options",
+        "options": MUSICAL_NOTES,
+        "default": "C2"
+    },
+    "OSCBOT_MOD_SENS": {
+        "display_name": "MOD SENS",
+        "type": "signed_range",
+        "range": (-50, 50),
+        "default": 0,
+        "show_plus": True
+    },
+    "OSCBOT_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PREAMP_AMP_TYPE": {
+        "display_name":
+        "AMP TYPE",
+        "type":
+        "options",
+        "options": [
+            "JC-120", "NATURAL CLEAN", "FULL RANGE", "COMBO CRUNCH",
+            "STACK CRUNCH", "HIGAIN STACK", "POWER DRIVE", "EXTREM LEAD",
+            "CORE METAL"
+        ],
+        "default":
+        "COMBO CRUNCH"
+    },
+    "PREAMP_SPK_TYPE": {
+        "display_name":
+        "SPK TYPE",
+        "type":
+        "options",
+        "options": [
+            "OFF", "ORIGINAL", "1x8\"", "1x10\"", "1x12\"", "2x12\"", "4x10\"",
+            "4x12\"", "8x12\""
+        ],
+        "default":
+        "ORIGINAL"
+    },
+    "PREAMP_GAIN": {
+        "display_name": "GAIN",
+        "type": "db_range",
+        "range": (0, 20),
+        "default": 6,
+        "show_plus": True
+    },
+    "PREAMP_T_COMP": {
+        "display_name": "T-COMP",
+        "type": "signed_range",
+        "range": (0, 20),
+        "default": 10,
+        "show_plus": True
+    },
+    "PREAMP_BASS": {
+        "display_name": "BASS",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PREAMP_MIDDLE": {
+        "display_name": "MIDDLE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PREAMP_TREBLE": {
+        "display_name": "TREBLE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PREAMP_PRESENCE": {
+        "display_name": "PRESENCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PREAMP_MIC_TYPE": {
+        "display_name": "MIC TYPE",
+        "type": "options",
+        "options": ["DYN57", "DYN421", "CND451", "CND87", "FLAT"],
+        "default": "DYN57"
+    },
+    "PREAMP_MIC_DIS": {
+        "display_name": "MIC DIS",
+        "type": "options",
+        "options": ["OFF MIC", "ON MIC"],
+        "default": "OFF MIC"
+    },
+    "PREAMP_MIC_POS": {
+        "display_name":
+        "MIC POS",
+        "type":
+        "options",
+        "options": [
+            "CENTER", "1cm", "2cm", "3cm", "4cm", "5cm", "6cm", "7cm", "8cm",
+            "9cm", "10cm"
+        ],
+        "default":
+        "CENTER"
+    },
+    "PREAMP_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "DIST_TYPE": {
+        "display_name": "TYPE",
+        "type": "options",
+        "options": ["VOCAL", "BOOST", "OD", "DS", "METAL", "FUZZ"],
+        "default": "BOOST"
+    },
+    "DIST_TONE": {
+        "display_name": "TONE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "DIST_DIST": {
+        "display_name": "DIST",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "DIST_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 0
+    },
+    "DIST_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "DYNAMICS_TYPE": {
+        "display_name":
+        "TYPE",
+        "type":
+        "options",
+        "options": [
+            "NATURALCOMP", "MIXER COMP", "LIVE COMP", "NATURAL LIM",
+            "HARD LIM", "JINGL COMP", "HARD COMP", "SOFT COMP", "CLEAN COMP",
+            "DANCE COMP", "ORCH COMP", "VOCAL COMP", "ACOUSTIC", "ROCK BAND",
+            "ORCHESTRA", "LOW BOOST", "BRIGHT", "DJs VOICE", "PHONE VOX"
+        ],
+        "default":
+        "NATURALCOMP"
+    },
+    "DYNAMICS_DYNAMICS": {
+        "display_name": "DYNAMICS",
+        "type": "signed_range",
+        "range": (-20, 20),
+        "default": 0,
+        "show_plus": True
+    },
+    "EQ_LOW_GAIN": {
+        "display_name": "LO GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "EQ_HI_GAIN": {
+        "display_name": "HI GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "EQ_LO_MID_FREQ": {
+        "display_name":
+        "LO MID FREQ",
+        "type":
+        "options",
+        "options": [
+            "20.0Hz", "25.0Hz", "31.5Hz", "40.0Hz", "50.0Hz", "63.0Hz",
+            "80.0Hz", "100Hz", "125Hz", "160Hz", "200Hz", "250Hz", "315Hz",
+            "400Hz", "500Hz", "630Hz", "800Hz", "1.00kHz", "1.25kHz",
+            "1.60kHz", "2.00kHz", "2.50kHz", "3.15kHz", "4.00kHz", "5.00kHz",
+            "6.30kHz", "8.00kHz", "10.0kHz"
+        ],
+        "default":
+        "800Hz"
+    },
+    "EQ_LO_MID_Q": {
+        "display_name": "LO MID Q",
+        "type": "options",
+        "options": ["0.5", "1", "2", "4", "8", "16"],
+        "default": "1"
+    },
+    "EQ_LO_MID_GAIN": {
+        "display_name": "LO MID GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "EQ_HIGH_MID_FREQ": {
+        "display_name":
+        "HIGH MID FREQ",
+        "type":
+        "options",
+        "options": [
+            "20.0Hz", "25.0Hz", "31.5Hz", "40.0Hz", "50.0Hz", "63.0Hz",
+            "80.0Hz", "100Hz", "125Hz", "160Hz", "200Hz", "250Hz", "315Hz",
+            "400Hz", "500Hz", "630Hz", "800Hz", "1.00kHz", "1.25kHz",
+            "1.60kHz", "2.00kHz", "2.50kHz", "3.15kHz", "4.00kHz", "5.00kHz",
+            "6.30kHz", "8.00kHz", "10.0kHz"
+        ],
+        "default":
+        "3.15kHz"
+    },
+    "EQ_HIGH_MID_Q": {
+        "display_name": "HIGH MID Q",
+        "type": "options",
+        "options": ["0.5", "1", "2", "4", "8", "16"],
+        "default": "1"
+    },
+    "EQ_HIGH_MID_GAIN": {
+        "display_name": "HIGH MID GAIN",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "EQ_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "db_range",
+        "range": (-20, 20),
+        "default": 0
+    },
+    "ISOLATOR_BAND": {
+        "display_name": "BAND",
+        "type": "options",
+        "options": ["LOW", "MIDDLE", "HIGH"],
+        "default": "LOW"
+    },
+    "ISOLATOR_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "QUARTER"
+    },
+    "ISOLATOR_BAND_LEVEL": {
+        "display_name": "BAND LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "ISOLATOR_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "ISOLATOR_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "ISOLATOR_WAVE_FORM": {
+        "display_name": "WAVE_FORM",
+        "type": "options",
+        "options": ["TRI", "SQR"],
+        "default": "TRI"
+    },
+    "OCTAVE_OCTAVE": {
+        "display_name": "OCTAVE",
+        "type": "options",
+        "options": ["-20CT", "-10CT", "-10CT&-20CT"],
+        "default": "-10CT"
+    },
+    "OCTAVE_MODE": {
+        "display_name": "MODE",
+        "type": "options",
+        "options": [1, 2],
+        "default": 2
+    },
+    "OCTAVE_OCTAVE_LEVEL": {
+        "display_name": "OCTAVE.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "AUTOPAN_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": 50,
+        "use_numeric_default": True
+    },
+    "AUTOPAN_WAVEFORM": {
+        "display_name": "WAVEFORM",
+        "type": "range",
+        "range": (0, 100),
+        "default": 0
+    },
+    "AUTOPAN_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "AUTOPAN_INIT_PHASE": {
+        "display_name": "INIT PHASE",
+        "type": "options",
+        "options": [0, 15, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180],
+        "default": 0
+    },
+    "AUTOPAN_STEP_RATE": {
+        "display_name": "STEP RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": ["OFF"] + MUSICAL_NOTE_OPTIONS,
+        "default": "OFF"
+    },
+    "MANUALPAN_POSITION": {
+        "display_name": "POSITION",
+        "type": "options",
+        "options": PAN_POSITIONS,
+        "default": "CENTER"
+    },
+    "STEREOENHANCE_LO_CUT": {
+        "display_name": "LO CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "STEREOENHANCE_HI_CUT": {
+        "display_name": "HI CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "STEREOENHANCE_ENHANCE": {
+        "display_name": "ENHANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TREMOLO_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": 85,
+        "use_numeric_default": True
+    },
+    "TREMOLO_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TREMOLO_WAVEFORM": {
+        "display_name": "WAVEFORM",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "VIBRATO_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "QUARTER"
+    },
+    "VIBRATO_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "VIBRATO_COLOR": {
+        "display_name": "COLOR",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "VIBRATO_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 0
+    },
+    "VIBRATO_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "PATTERNSLICER_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "QUARTER"
+    },
+    "PATTERNSLICER_DUTY": {
+        "display_name": "DUTY",
+        "type": "range",
+        "range": (1, 99),
+        "default": 50
+    },
+    "PATTERNSLICER_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 35
+    },
+    "PATTERNSLICER_PATTERN": {
+        "display_name": "PATTERN",
+        "type": "options",
+        "options": [f"P{i:02d}" for i in range(1, 21)],
+        "default": "P01"
+    },
+    "PATTERNSLICER_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "PATTERNSLICER_THRESHOLD": {
+        "display_name": "THRESHOLD",
+        "type": "range",
+        "range": (-30, 0),
+        "default": -30
+    },
+    "PATTERNSLICER_GAIN": {
+        "display_name": "GAIN",
+        "type": "db_range",
+        "range": (0, 20),
+        "default": 6,
+        "show_plus": True
+    },
+    "STEPSLICER_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": MUSICAL_NOTE_OPTIONS,
+        "default": "QUARTER"
+    },
+    "STEPSLICER_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_THRESHOLD": {
+        "display_name": "THRESHOLD",
+        "type": "range",
+        "range": (-30, 0),
+        "default": -30
+    },
+    "STEPSLICER_GAIN": {
+        "display_name": "GAIN",
+        "type": "db_range",
+        "range": (0, 20),
+        "default": 6,
+        "show_plus": True
+    },
+    "STEPSLICER_STEP_MAX": {
+        "display_name": "STEP MAX",
+        "type": "options",
+        "options": list(range(1, 17)),
+        "default": 16
+    },
+    "STEPSLICER_STEP_LEN1": {
+        "display_name": "STEP LEN1",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN2": {
+        "display_name": "STEP LEN2",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN3": {
+        "display_name": "STEP LEN3",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN4": {
+        "display_name": "STEP LEN4",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN5": {
+        "display_name": "STEP LEN5",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN6": {
+        "display_name": "STEP LEN6",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN7": {
+        "display_name": "STEP LEN7",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN8": {
+        "display_name": "STEP LEN8",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN9": {
+        "display_name": "STEP LEN9",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN10": {
+        "display_name": "STEP LEN10",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN11": {
+        "display_name": "STEP LEN11",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN12": {
+        "display_name": "STEP LEN12",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN13": {
+        "display_name": "STEP LEN13",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN14": {
+        "display_name": "STEP LEN14",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN15": {
+        "display_name": "STEP LEN15",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LEN16": {
+        "display_name": "STEP LEN16",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "STEPSLICER_STEP_LVL1": {
+        "display_name": "STEP LVL1",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL2": {
+        "display_name": "STEP LVL2",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL3": {
+        "display_name": "STEP LVL3",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL4": {
+        "display_name": "STEP LVL4",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL5": {
+        "display_name": "STEP LVL5",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL6": {
+        "display_name": "STEP LVL6",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL7": {
+        "display_name": "STEP LVL7",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL8": {
+        "display_name": "STEP LVL8",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL9": {
+        "display_name": "STEP LVL9",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL10": {
+        "display_name": "STEP LVL10",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL11": {
+        "display_name": "STEP LVL11",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL12": {
+        "display_name": "STEP LVL12",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL13": {
+        "display_name": "STEP LVL13",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL14": {
+        "display_name": "STEP LVL14",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL15": {
+        "display_name": "STEP LVL15",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "STEPSLICER_STEP_LVL16": {
+        "display_name": "STEP LVL16",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "DELAY_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "DELAY_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 20
+    },
+    "DELAY_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "DELAY_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": DELAY_LO_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "DELAY_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": DELAY_HI_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "DELAY_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "PANNINGDELAY_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "PANNINGDELAY_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 20
+    },
+    "PANNINGDELAY_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "PANNINGDELAY_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": DELAY_LO_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "PANNINGDELAY_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": DELAY_HI_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "PANNINGDELAY_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "REVERSEDELAY_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "REVERSEDELAY_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 20
+    },
+    "REVERSEDELAY_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "REVERSEDELAY_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": DELAY_LO_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERSEDELAY_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": DELAY_HI_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERSEDELAY_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "MODDELAY_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "MODDELAY_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 20
+    },
+    "MODDELAY_MOD_DEPTH": {
+        "display_name": "MOD DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "MODDELAY_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "MODDELAY_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": DELAY_LO_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "MODDELAY_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": DELAY_HI_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "MODDELAY_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "TYPEECHO1_REPEAT_TIME": {
+        "display_name": "REPEAT TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "TYPEECHO1_INTENSITY": {
+        "display_name": "INTENSITY",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TYPEECHO1_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "TYPEECHO1_BASS": {
+        "display_name": "BASS",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TYPEECHO1_TREBLE": {
+        "display_name": "TREBLE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TYPEECHO1_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "TYPEECHO2_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 200,
+        "use_numeric_default": True,
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "TYPEECHO2_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 20
+    },
+    "TYPEECHO2_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "TYPEECHO2_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": DELAY_LO_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "TYPEECHO2_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": DELAY_HI_CUT_OPTIONS,
+        "default": "FLAT"
+    },
+    "TYPEECHO2_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 120),
+        "default": 50
+    },
+    "GNRDELAY_TIME": {
+        "display_name": "TIME",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "GNRDELAY_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 70
+    },
+    "GNRDELAY_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "WARP_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TWIST_RELEASE": {
+        "display_name": "RELEASE",
+        "type": "options",
+        "options": ["FADE", "FALL"],
+        "default": "FALL"
+    },
+    "TWIST_RISE": {
+        "display_name": "RISE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TWIST_FALL": {
+        "display_name": "FALL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "TWIST_LEVEL": {
+        "display_name": "LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "ROLL1_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": "QUARTER",
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "ROLL1_FEEDBACK": {
+        "display_name": "FEEDBACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "ROLL1_ROLL": {
+        "display_name": "ROLL",
+        "type": "options",
+        "options": ["OFF", "1/2", "1/4", "1/8", "1/16"],
+        "default": "OFF"
+    },
+    "ROLL1_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "ROLL2_TIME": {
+        "display_name": "TIME",
+        "type": "combined",
+        "numeric_range": (1, 2000),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": "QUARTER",
+        "show_buttons": True,
+        "suffix": "ms"
+    },
+    "ROLL2_REPEAT": {
+        "display_name": "REPEAT",
+        "type": "options",
+        "options": [str(i) for i in range(1, 101)] + ["∞"],
+        "default": "50"
+    },
+    "ROLL2_ROLL": {
+        "display_name": "ROLL",
+        "type": "options",
+        "options": ["OFF", "1/2", "1/4", "1/8", "1/16"],
+        "default": "OFF"
+    },
+    "ROLL2_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "FREEZE_ATTACK": {
+        "display_name": "ATTACK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 30
+    },
+    "FREEZE_RELEASE": {
+        "display_name": "RELEASE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 30
+    },
+    "FREEZE_DECAY": {
+        "display_name": "DECAY",
+        "type": "range",
+        "range": (0, 100),
+        "default": 30
+    },
+    "FREEZE_SUSTAIN": {
+        "display_name": "SUSTAIN",
+        "type": "range",
+        "range": (0, 100),
+        "default": 30
+    },
+    "FREEZE_BALANCE": {
+        "display_name": "BALANCE",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "CHORUS_RATE": {
+        "display_name": "RATE",
+        "type": "combined",
+        "numeric_range": (0, 100),
+        "options": DELAY_TIME_MUSICAL_OPTIONS,
+        "default": 50,
+        "use_numeric_default": True
+    },
+    "CHORUS_DEPTH": {
+        "display_name": "DEPTH",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "CHORUS_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "CHORUS_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "CHORUS_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "CHORUS_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "REVERB_TIME": {
+        "display_name": "TIME",
+        "type": "options",
+        "options": [f"{str(round(i/10, 1))}s" for i in range(1, 101)],
+        "default": "3.0s"
+    },
+    "REVERB_PRE_DELAY": {
+        "display_name": "PRE DELAY",
+        "type": "range",
+        "range": (0, 500),
+        "default": 0
+    },
+    "REVERB_DENSITY": {
+        "display_name": "DENSITY",
+        "type": "range",
+        "range": (0, 9),
+        "default": 4
+    },
+    "REVERB_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "REVERB_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERB_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERB_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "GATEREVERB_TIME": {
+        "display_name": "TIME",
+        "type": "options",
+        "options": [f"{str(round(i/10, 1))}s" for i in range(1, 101)],
+        "default": "3.0s"
+    },
+    "GATEREVERB_PRE_DELAY": {
+        "display_name": "PRE DELAY",
+        "type": "range",
+        "range": (0, 500),
+        "default": 0
+    },
+    "GATEREVERB_THRESHOLD": {
+        "display_name": "THRESHOLD",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "GATEREVERB_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "GATEREVERB_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "GATEREVERB_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "GATEREVERB_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "REVERSEREVERB_TIME": {
+        "display_name": "TIME",
+        "type": "options",
+        "options": [f"{str(round(i/10, 1))}s" for i in range(1, 10)],
+        "default": "0.5s"
+    },
+    "REVERSEREVERB_PRE_DELAY": {
+        "display_name": "PRE DELAY",
+        "type": "range",
+        "range": (0, 500),
+        "default": 0
+    },
+    "REVERSEREVERB_GATE_DELAY": {
+        "display_name": "GATE DELAY",
+        "type": "options",
+        "options": [f"{str(round(i/10, 1))}s" for i in range(1, 10)],
+        "default": "0.5s"
+    },
+    "REVERSEREVERB_D_LEVEL": {
+        "display_name": "D.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 100
+    },
+    "REVERSEREVERB_LOW_CUT": {
+        "display_name": "LOW CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERSEREVERB_HIGH_CUT": {
+        "display_name": "HIGH CUT",
+        "type": "options",
+        "options": FREQUENCY_OPTIONS,
+        "default": "FLAT"
+    },
+    "REVERSEREVERB_E_LEVEL": {
+        "display_name": "E.LEVEL",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    },
+    "BEATSCATTER_TYPE": {
+        "display_name": "TYPE",
+        "type": "options",
+        "options": [f"P{i:02d}" for i in range(1, 4)],
+        "default": "P1"
+    },
+    "BEATSCATTER_LENGTH": {
+        "display_name": "LENGTH",
+        "type": "options",
+        "options": ["THRU", "𝅗𝅥", "♩", "♪", "𝅘𝅥𝅯'"],
+        "default": "QUARTER"
+    },
+    "BEATREPEAT_TYPE": {
+        "display_name": "TYPE",
+        "type": "options",
+        "options": ["FORWARD", "REWIND", "MIX"],
+        "default": "FORWARD"
+    },
+    "BEATREPEAT_LENGTH": {
+        "display_name": "LENGTH",
+        "type": "options",
+        "options": ["THRU", "𝅗", "𝅗𝅥", "♩", "♪", "𝅘𝅥𝅯'", "𝅘E"],
+        "default": "QUARTER"
+    },
+    "BEATSHIFT_TYPE": {
+        "display_name": "TYPE",
+        "type": "options",
+        "options": ["FUTURE", "PAST"],
+        "default": "FUTURE"
+    },
+    "BEATSHIFT_SHIFT": {
+        "display_name": "SHIFT",
+        "type": "options",
+        "options": ["THRU", "𝅘𝅥𝅯'", "♪", "♩", "𝅗𝅥", "𝅗"],
+        "default": "QUARTER"
+    },
+    "VINYLFLICK_FLICK": {
+        "display_name": "FLICK",
+        "type": "range",
+        "range": (0, 100),
+        "default": 50
+    }

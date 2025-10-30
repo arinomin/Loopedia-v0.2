@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
+    <meta
+      name="description"
+      content="ループステーションのプリセットを共有するコミュニティ"
+    />
+    <meta name="theme-color" content="#6366f1" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+    <link rel="icon" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Loopedia</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- PWA Service Worker登録 (絶対パス使用) -->
+    <script>
+      // PWAサポートおよびService Worker登録
+      function registerServiceWorker() {
+        // Service Workerのサポートチェック
+        if ("serviceWorker" in navigator) {
+          // 現在のベースURLを取得（プロトコル + ホスト名）
+          const baseUrl = window.location.origin;
+
+          // 登録を遅延実行して他のリソース読み込みを妨げないようにする
+          window.addEventListener("load", async () => {
+            try {
+              console.log("PWA: Attempting to register service worker...");
+
+              // 絶対パスでサービスワーカーを登録する
+              const swUrl = `${baseUrl}/service-worker.js`;
+              console.log("PWA: Registering Service Worker at:", swUrl);
+
+              const registration = await navigator.serviceWorker.register(
+                swUrl,
+                {
+                  scope: "/",
+                },
+              );
+
+              console.log(
+                "PWA: Service Worker registration successful with scope:",
+                registration.scope,
+              );
+
+              // サービスワーカーの状態を監視
+              if (registration.installing) {
+                console.log("PWA: Service Worker installing");
+              } else if (registration.waiting) {
+                console.log("PWA: Service Worker installed/waiting");
+              } else if (registration.active) {
+                console.log("PWA: Service Worker active");
+              }
+            } catch (error) {
+              console.error("PWA: Service Worker registration failed:", error);
+            }
+          });
+        } else {
+          console.log("PWA: Service Workers are not supported in this browser");
+        }
+      }
+
+      // 即時関数として実行
+      (function () {
+        registerServiceWorker();
+      })();
+    </script>
+    <!-- This script injects a replit badge into the page, please feel free to remove this line -->
+    <script
+      type="text/javascript"
+      src="https://replit.com/public/js/replit-badge-v3.js"
+    ></script>
+  </body>
+</html>

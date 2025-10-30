@@ -1,0 +1,96 @@
+Create React Appなどのモダンなフロントエンド環境では、SVGファイルをReactコンポーネントとして直接インポートできます。
+
+手順:
+
+SVGファイルを用意する:
+
+各音符のSVGファイル（例: quarter-note.svg, eighth-note.svg）を作成またはダウンロードし、src/assets/iconsのようなフォルダに保存します。
+Reactコンポーネントでインポートして使用する:
+
+JavaScript
+
+import React, { useState } from 'react';
+// SVGファイルをReactコンポーネントとしてインポート
+import { ReactComponent as QuarterNoteIcon } from './assets/icons/quarter-note.svg';
+import { ReactComponent as EighthNoteIcon } from './assets/icons/eighth-note.svg';
+// 必要であればCSSもインポート
+import './NoteSelector.css';
+
+function NoteSelector() {
+  const [selectedNote, setSelectedNote] = useState(null);
+
+  const handleNoteSelect = (noteName) => {
+    setSelectedNote(noteName);
+    // ここで選択された音符に応じた処理を行う (例: 親コンポーネントに通知)
+    console.log('Selected:', noteName);
+  };
+
+  return (
+    <div>
+      <p>音符を選択してください:</p>
+      <button
+        className={`note-button ${selectedNote === 'quarter' ? 'selected' : ''}`}
+        onClick={() => handleNoteSelect('quarter')}
+        aria-label="四分音符を選択" // アクセシビリティのためのラベル
+      >
+        {/* SVGコンポーネントをレンダリング */}
+        <QuarterNoteIcon className="note-icon" />
+      </button>
+      <button
+        className={`note-button ${selectedNote === 'eighth' ? 'selected' : ''}`}
+        onClick={() => handleNoteSelect('eighth')}
+        aria-label="八分音符を選択"
+      >
+        <EighthNoteIcon className="note-icon" />
+      </button>
+      {/* 他の音符ボタンも同様に追加 */}
+
+      {selectedNote && <p>選択中の音符: {selectedNote}</p>}
+    </div>
+  );
+}
+
+export default NoteSelector;
+CSSでスタイルを調整する: (NoteSelector.css)
+CSS
+
+.note-button {
+  background-color: #eee;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex; /* アイコンとテキストを揃えたい場合に便利 */
+  align-items: center;
+  justify-content: center;
+  min-width: 50px; /* ボタンの最小幅 */
+  min-height: 50px; /* ボタンの最小高さ */
+}
+
+.note-button:hover {
+  background-color: #ddd;
+}
+
+.note-button.selected {
+  background-color: #cceeff;
+  border-color: #99ddff;
+}
+
+.note-icon {
+  width: 24px; /* SVGのサイズを指定 */
+  height: 24px;
+  fill: currentColor; /* ボタンのテキストカラーに合わせる場合 */
+  /* または直接色を指定 */
+  /* fill: #333; */
+}
+
+/* SVG自体の色を変えたい場合 */
+.note-icon path {
+   /* fill: #000; */
+}
+利点:
+
+SVGの読み込みと利用が非常に簡単。
+CSSでサイズや色を柔軟に制御できる。
+バンドラー（Webpackなど）が最適化してくれる。

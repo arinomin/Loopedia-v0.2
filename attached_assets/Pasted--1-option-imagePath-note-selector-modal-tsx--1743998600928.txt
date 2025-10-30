@@ -1,0 +1,93 @@
+以下のステップで確認・修正してみてください。
+
+1. 呼び出し側の確認 (最優先)
+
+option.imagePath の値を確認する:
+note-selector-modal.tsx 内で NoteImage コンポーネントを使用している箇所（ループ処理の中など）で、各ボタンに対して渡されている option.imagePath の値が本当に意図通り異なっているか確認してください。
+
+// note-selector-modal.tsx の該当箇所（例: map処理の中）
+options.map((option, index) => {
+  const optionValue = typeof option === 'string' ? option : option.value;
+  // ★★★ デバッグログを追加 ★★★
+  console.log(`Index: ${index}, OptionValue: ${optionValue}, ImagePath: ${typeof option === 'object' ? option.imagePath : 'N/A'}`); 
+
+  return (
+    <button key={optionValue} /* ...他のprops... */>
+      {typeof option === 'object' && option.type === 'image' && option.imagePath ? (
+        <NoteImage path={option.imagePath} alt={optionValue} className="h-8" />
+      ) : (
+        <span className="text-center font-mono text-lg">{optionValue}</span>
+      )}
+    </button>
+  );
+})
+Use code with caution.
+TypeScript
+コンソールに出力される ImagePath が、各ボタンで異なる期待通りの値になっているか確認してください。もし同じパスが繰り返し表示されている場合、options 配列の生成ロジックや、option.imagePath を設定する部分に問題があります。
+
+リストレンダリング時の key プロパティ:
+上記の例のように、map などを使ってボタンのリストをレンダリングしている場合、各要素（この例では <button>）にユニークな key プロパティを必ず指定してください。key がないか、重複していると、Reactが要素を正しく更新できず、表示がおかしくなることがあります。例: key={optionValue} や key={option.id} など、各オプションを一意に識別できる値を指定します。
+
+2. SVGデータソースの確認
+
+note-images.ts で参照している noteSvgContent オブジェクトの内容を確認してください。
+
+// note-images.ts または関連ファイル
+import { noteSvgContent } from './noteSvgContent'; // 仮のインポートパス
+
+// ★★★ デバッグログを追加 ★★★
+console.log('SVG Content:', noteSvgContent);
+
+export function getNoteImageSvg(noteName: string): string | undefined {
+  // ... (既存のコード)
+}
+Use code with caution.
+TypeScript
+コンソールに出力される noteSvgContent の中身を見て、キー（例: "notes1", "notes2"）と、それに対応するSVG文字列が正しい組み合わせになっているか確認してください。もしかしたら、データ作成時に誤って同じSVG文字列を複数のキーに割り当ててしまっている可能性も考えられます。
+
+3. NoteImage コンポーネントの改善案
+
+上記 1, 2 を確認しても問題が解決しない場合、または将来的なメンテナンス性を考慮する場合、NoteImage コンポーネントの実装を見直すことも有効です。AIが提案した実装には、いくつか改善の余地があります。
+
+問題点:
+
+dangerouslySetInnerHTML 内で replace を使ってインラインスタイルを挿入するのは、SVGの元の属性（width, height, style）との兼ね合いで不安定になる可能性があります。
+
+複数の div と flex プロパティ、インラインスタイル、Tailwindクラスが混在しており、意図通りにサイズや配置が制御できていない可能性があります。
+
+改善案 1: スタイリングの簡略化 (dangerouslySetInnerHTML を維持)
+外側の要素でサイズを固定し、SVG自体はそのコンテナに合わせて伸縮するようにします。
+
+// note-image.tsx
+export function NoteImage({ path, alt, className = "h-8 w-8" }: NoteImageProps) {
+  const svgContent = getNoteImageSvg(path);
+
+  if (!svgContent) {
+    return (
+      <span className="font-mono text-sm border border-dashed border-gray-300 px-2 py-1">
+        {alt}
+      </span>
+    );
+  }
+
+  // SVGから固定のwidth/height属性を削除し、viewBoxでスケーリングさせる
+  // classを追加してCSS/Tailwindで制御しやすくする (fill-currentで色も制御可能に)
+  const processedSvgContent = svgContent
+    .replace(/ width="[^"]*"/, '')
+    .replace(/ height="[^"]*"/, '')
+    .replace('<svg', '<svg class="w-full h-full fill-current"'); // SVG自体がコンテナに合わせて伸縮するようにクラスを追加
+
+  return (
+    <span // ボタン内でインライン要素として配置される想定なら span、そうでなければ div
+      className={`inline-flex items-center justify-center ${className}`} // ★ 親要素でサイズを指定 (例: h-8 w-8)
+      title={alt}
+      role="img"
+      aria-label={alt}
+      dangerouslySetInnerHTML={{ __html: processedSvgContent }} // ★ span/div に直接SVG内容を設定
+    />
+  );
+}
+Use code with caution.
+TypeScript
+この方法では、NoteImage に渡される className（例: "h-8 w-8"）で全体のサイズが決まり、中のSVGはそのサイズいっぱいに表示されます。SVGの色は、親要素の text-color (例: text-blue-500) で制御できるようになります（fill-current をSVGに追加した場合）。
+

@@ -1,0 +1,918 @@
+import React, { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow
+} from "@/components/ui/table";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle, 
+  CardFooter 
+} from "@/components/ui/card";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Search, 
+  UserX, 
+  Shield, 
+  AlertTriangle, 
+  Settings, 
+  Mail, 
+  Loader2,
+  Check,
+  X,
+  ChevronRight,
+  RefreshCw
+} from "lucide-react";
+
+// 管理者用ページコンポーネント
+export default function AdminPanel() {
+  const [_, navigate] = useLocation();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState("users");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openUserDialog, setOpenUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [openContactDialog, setOpenContactDialog] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<any>(null);
+  const [userList, setUserList] = useState<any[]>([]);
+  const [contactList, setContactList] = useState<any[]>([]);
+  
+  // 現在のユーザー情報を取得して管理者権限をチェック
+  const { data: currentUser, isLoading: isUserLoading } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: () => fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.json()),
+  });
+  
+  // ユーザー一覧を取得
+  const { data: users, isLoading: isUsersLoading } = useQuery({
+    queryKey: ["/api/admin/users"],
+    queryFn: async () => {
+      try {
+        // APIからユーザー一覧を取得
+        const res = await apiRequest("GET", "/api/admin/users");
+        const data = await res.json();
+        console.log("Users data from API:", data);
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        toast({
+          title: "エラー",
+          description: "ユーザー一覧の取得に失敗しました。",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !isUserLoading && currentUser?.username === "admin",
+  });
+  
+  // ユーザーデータが変更されたら状態を更新
+  useEffect(() => {
+    if (users) {
+      setUserList(users);
+    }
+  }, [users]);
+  
+  // お問い合わせ一覧
+  const { data: contacts, isLoading: isContactsLoading } = useQuery({
+    queryKey: ["/api/admin/contacts"],
+    queryFn: async () => {
+      try {
+        // APIからお問い合わせデータを取得
+        const res = await apiRequest("GET", "/api/admin/contacts");
+        const data = await res.json();
+        console.log("Contacts data from API:", data);
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch contacts:", error);
+        toast({
+          title: "エラー",
+          description: "お問い合わせ一覧の取得に失敗しました。",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+    enabled: !isUserLoading && currentUser?.username === "admin",
+  });
+  
+  // お問い合わせデータが変更されたら状態を更新
+  useEffect(() => {
+    if (contacts) {
+      setContactList(contacts);
+    }
+  }, [contacts]);
+  
+  // システム統計情報
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    queryFn: async () => {
+      try {
+        // APIから統計情報を取得
+        const res = await apiRequest("GET", "/api/admin/stats");
+        const data = await res.json();
+        console.log("Stats data from API:", data);
+        return data;
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+        toast({
+          title: "エラー",
+          description: "統計情報の取得に失敗しました。",
+          variant: "destructive",
+        });
+        return null;
+      }
+    },
+    enabled: !isUserLoading && currentUser?.username === "admin",
+  });
+  
+  // ユーザー削除のミューテーション
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "削除成功",
+        description: "ユーザーが削除されました。",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "削除エラー",
+        description: "ユーザーの削除に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // お問い合わせステータス更新のミューテーション
+  const updateContactStatusMutation = useMutation({
+    mutationFn: async ({ contactId, status }: { contactId: number, status: string }) => {
+      const res = await apiRequest("PATCH", `/api/admin/contacts/${contactId}`, { status });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "更新成功",
+        description: "お問い合わせのステータスが更新されました。",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contacts"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "更新エラー",
+        description: "ステータスの更新に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // お問い合わせへの返信ミューテーション
+  const replyToContactMutation = useMutation({
+    mutationFn: async ({ contactId, reply }: { contactId: number, reply: string }) => {
+      const res = await apiRequest("POST", `/api/admin/contacts/${contactId}/reply`, { reply });
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "返信成功",
+        description: "お問い合わせへの返信が送信されました。",
+      });
+      setOpenContactDialog(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contacts"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "返信エラー",
+        description: "返信の送信に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // お問い合わせ一覧更新処理
+  const refreshContacts = async () => {
+    try {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/contacts"] });
+      toast({
+        title: "更新完了",
+        description: "お問い合わせ一覧を更新しました。",
+      });
+    } catch (error) {
+      toast({
+        title: "更新エラー",
+        description: "お問い合わせ一覧の更新に失敗しました。",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  // 管理者権限のチェック
+  useEffect(() => {
+    if (!isUserLoading && currentUser && currentUser.username !== "admin") {
+      toast({
+        title: "権限エラー",
+        description: "このページへのアクセス権限がありません。",
+        variant: "destructive",
+      });
+      navigate("/");
+    }
+  }, [currentUser, isUserLoading, navigate, toast]);
+  
+  const handleDeleteUser = async (userId: number) => {
+    try {
+      await deleteUserMutation.mutateAsync(userId);
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+    }
+  };
+  
+  const handleUpdateContactStatus = async (contactId: number, status: string) => {
+    try {
+      await updateContactStatusMutation.mutateAsync({ contactId, status });
+    } catch (error) {
+      console.error("Failed to update contact status:", error);
+    }
+  };
+  
+  const filteredUsers = users?.filter((user: any) => 
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (user.nickname && user.nickname.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+  
+  const filteredContacts = contacts?.filter((contact: any) =>
+    contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    contact.contactDetail.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+  
+  const renderUserDialog = () => {
+    if (!selectedUser) return null;
+    
+    return (
+      <Dialog open={openUserDialog} onOpenChange={setOpenUserDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>ユーザー詳細</DialogTitle>
+            <DialogDescription>
+              ユーザーID: {selectedUser.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <Avatar className="h-16 w-16">
+                {selectedUser.avatarUrl && <AvatarImage src={selectedUser.avatarUrl} />}
+                <AvatarFallback>{selectedUser.nickname?.[0] || selectedUser.username[0].toUpperCase()}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="text-lg font-semibold">{selectedUser.nickname || selectedUser.username}</h3>
+                <p className="text-sm text-muted-foreground">@{selectedUser.username}</p>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <p><span className="font-medium">登録日:</span> {new Date(selectedUser.createdAt).toLocaleDateString("ja-JP")}</p>
+              <p><span className="font-medium">投稿数:</span> {selectedUser.presetCount || 0}</p>
+              <p><span className="font-medium">コメント数:</span> {selectedUser.commentCount || 0}</p>
+              <p><span className="font-medium">いいね数:</span> {selectedUser.likeCount || 0}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenUserDialog(false)}>閉じる</Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">
+                  <UserX className="mr-2 h-4 w-4" />
+                  ユーザー削除
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>ユーザーを削除しますか？</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    この操作は取り消せません。ユーザー「{selectedUser.nickname || selectedUser.username}」のアカウントと関連するすべてのデータが削除されます。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      handleDeleteUser(selectedUser.id);
+                      setOpenUserDialog(false);
+                    }}
+                    className="bg-destructive text-destructive-foreground"
+                  >
+                    削除する
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  const [replyText, setReplyText] = useState("");
+  const [isReplying, setIsReplying] = useState(false);
+
+  const renderContactDialog = () => {
+    if (!selectedContact) return null;
+    
+    const getStatusBadge = (status: string) => {
+      switch (status) {
+        case "new":
+          return <Badge variant="default">新規</Badge>;
+        case "in_progress":
+          return <Badge variant="outline">対応中</Badge>;
+        case "resolved":
+          return <Badge variant="secondary">解決済み</Badge>;
+        default:
+          return <Badge variant="outline">{status}</Badge>;
+      }
+    };
+    
+    const handleSendReply = async () => {
+      if (!replyText.trim()) {
+        toast({
+          title: "入力エラー",
+          description: "返信内容を入力してください",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setIsReplying(true);
+      
+      try {
+        await replyToContactMutation.mutateAsync({
+          contactId: selectedContact.id,
+          reply: replyText
+        });
+        
+        // 返信成功後、テキストエリアをクリア
+        setReplyText("");
+      } catch (error) {
+        console.error("Failed to send reply:", error);
+      } finally {
+        setIsReplying(false);
+      }
+    };
+    
+    return (
+      <Dialog open={openContactDialog} onOpenChange={setOpenContactDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>お問い合わせ詳細</DialogTitle>
+            <DialogDescription>
+              問い合わせID: {selectedContact.id} | {new Date(selectedContact.createdAt).toLocaleString("ja-JP")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-medium">名前</h3>
+                <p>{selectedContact.name}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">連絡先</h3>
+                <p>{selectedContact.contactMethod === "twitter" ? "@" : ""}{selectedContact.contactDetail}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">カテゴリ</h3>
+                <p>{getCategoryName(selectedContact.category)}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium">ステータス</h3>
+                <div className="mt-1">
+                  {getStatusBadge(selectedContact.status)}
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-sm font-medium mb-1">問い合わせ内容</h3>
+              <div className="p-3 bg-muted rounded-md whitespace-pre-wrap">
+                {selectedContact.message}
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="status">ステータス変更</Label>
+              <Select
+                value={selectedContact.status}
+                onValueChange={(value) => {
+                  handleUpdateContactStatus(selectedContact.id, value);
+                  // ステータスの変更を即座に反映させる
+                  setSelectedContact({ ...selectedContact, status: value });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="ステータスを選択" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new">新規</SelectItem>
+                  <SelectItem value="in_progress">対応中</SelectItem>
+                  <SelectItem value="resolved">解決済み</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="response">返信内容</Label>
+              <Textarea
+                id="response"
+                placeholder="返信内容を入力..."
+                rows={4}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+              />
+              {selectedContact.status === "resolved" && (
+                <p className="text-xs text-yellow-600 mt-1">
+                  ※ すでに解決済みの問い合わせです。必要に応じてステータスを変更してください。
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setOpenContactDialog(false)}>閉じる</Button>
+            <Button 
+              onClick={handleSendReply} 
+              disabled={isReplying || !replyText.trim()}
+              className="sm:ml-auto"
+            >
+              {isReplying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  送信中...
+                </>
+              ) : (
+                <>返信する</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+  
+  // カテゴリ名を取得
+  const getCategoryName = (categoryKey: string) => {
+    const categories: Record<string, string> = {
+      "question": "使い方・機能に関する質問",
+      "bug": "不具合・エラーの報告",
+      "feature": "機能改善・追加の要望",
+      "account": "アカウントに関する問題",
+      "other": "その他"
+    };
+    return categories[categoryKey] || categoryKey;
+  };
+  
+  // 読み込み中の場合はローディング表示
+  if (isUserLoading || (currentUser?.username === "admin" && (isUsersLoading || isContactsLoading || isStatsLoading))) {
+    return (
+      <div className="flex justify-center items-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  
+  // 管理者でない場合は表示しない（すでにリダイレクトしているはず）
+  if (currentUser?.username !== "admin") {
+    return <div className="p-8 text-center">このページにアクセスする権限がありません。</div>;
+  }
+  
+  return (
+    <div className="container py-8 px-4 md:px-6">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">管理パネル</h1>
+        <p className="text-muted-foreground">管理者専用のコントロールパネルです。ユーザー管理やシステム設定を行えます。</p>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-3 w-full max-w-md">
+          <TabsTrigger value="users">
+            <Shield className="mr-2 h-4 w-4" />
+            ユーザー管理
+          </TabsTrigger>
+          <TabsTrigger value="inquiries">
+            <Mail className="mr-2 h-4 w-4" />
+            お問い合わせ
+          </TabsTrigger>
+          <TabsTrigger value="system">
+            <Settings className="mr-2 h-4 w-4" />
+            システム情報
+          </TabsTrigger>
+        </TabsList>
+        
+        {/* 検索フィールド */}
+        {(activeTab === "users" || activeTab === "inquiries") && (
+          <div className="flex w-full max-w-sm items-center space-x-2 mb-4">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={activeTab === "users" ? "ユーザー名で検索..." : "お問い合わせ内容で検索..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="flex-1"
+            />
+          </div>
+        )}
+        
+        {/* ユーザー管理タブ */}
+        <TabsContent value="users" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>登録ユーザー一覧</CardTitle>
+              <CardDescription>
+                全ユーザー: {users?.length || 0}人
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* データがロードされるまでデモユーザーを表示 */}
+              {(!users || users.length === 0) && (
+                <div className="py-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center py-2 border-b">
+                      <div className="h-6 w-6 mr-2 bg-gray-200 rounded-full animate-pulse"></div>
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {isMobile ? (
+                // モバイル表示
+                <div className="space-y-4">
+                  {filteredUsers && filteredUsers.length > 0 ? (
+                    filteredUsers.map((user: any) => (
+                      <Card key={user.id} className="overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                              <Avatar className="h-8 w-8 mr-2">
+                                {user.avatarUrl && <AvatarImage src={user.avatarUrl} />}
+                                <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{user.username}</div>
+                                <div className="text-sm text-muted-foreground">{user.nickname || "-"}</div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-auto"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setOpenUserDialog(true);
+                              }}
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </Button>
+                          </div>
+                          <div className="text-sm grid grid-cols-2 gap-x-2 gap-y-1">
+                            <div className="text-muted-foreground">ID:</div>
+                            <div>{user.id}</div>
+                            <div className="text-muted-foreground">登録日:</div>
+                            <div>{new Date(user.createdAt).toLocaleDateString("ja-JP")}</div>
+                            <div className="text-muted-foreground">投稿数:</div>
+                            <div>{user.presetCount || 0}</div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-4 text-center text-muted-foreground">
+                      {searchQuery ? "検索条件に一致するユーザーはいません" : "ユーザーが登録されていません"}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // デスクトップ表示
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>ユーザー名</TableHead>
+                      <TableHead>ニックネーム</TableHead>
+                      <TableHead>登録日</TableHead>
+                      <TableHead>投稿数</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers && filteredUsers.length > 0 ? (
+                      filteredUsers.map((user: any) => (
+                        <TableRow key={user.id}>
+                          <TableCell>{user.id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Avatar className="h-6 w-6 mr-2">
+                                {user.avatarUrl && <AvatarImage src={user.avatarUrl} />}
+                                <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                              </Avatar>
+                              {user.username}
+                            </div>
+                          </TableCell>
+                          <TableCell>{user.nickname || "-"}</TableCell>
+                          <TableCell>{new Date(user.createdAt).toLocaleDateString("ja-JP")}</TableCell>
+                          <TableCell>{user.presetCount || 0}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setOpenUserDialog(true);
+                              }}
+                            >
+                              詳細
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          {searchQuery ? "検索条件に一致するユーザーはいません" : "ユーザーが登録されていません"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* お問い合わせ管理タブ */}
+        <TabsContent value="inquiries" className="space-y-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>お問い合わせ一覧</CardTitle>
+                  <CardDescription>
+                    全お問い合わせ: {contacts?.length || 0}件 
+                    (未対応: {contacts?.filter((c: any) => c.status === "new").length || 0}件)
+                  </CardDescription>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-1"
+                  onClick={refreshContacts}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  更新
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* データがロードされるまでデモデータを表示 */}
+              {(!contacts || contacts.length === 0) && (
+                <div className="py-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="py-2 border-b">
+                      <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2"></div>
+                      <div className="h-3 w-48 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {isMobile ? (
+                // モバイル表示
+                <div className="space-y-3">
+                  {filteredContacts && filteredContacts.length > 0 ? (
+                    filteredContacts.map((contact: any) => (
+                      <Card key={contact.id} className="overflow-hidden">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <div className="font-medium">{contact.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(contact.createdAt).toLocaleDateString("ja-JP")}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {contact.status === "new" && <Badge variant="default">新規</Badge>}
+                              {contact.status === "in_progress" && <Badge variant="outline">対応中</Badge>}
+                              {contact.status === "resolved" && <Badge variant="secondary">解決済み</Badge>}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="p-1"
+                                onClick={() => {
+                                  setSelectedContact(contact);
+                                  setOpenContactDialog(true);
+                                }}
+                              >
+                                <ChevronRight className="h-5 w-5" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="text-sm text-muted-foreground mb-2">{getCategoryName(contact.category)}</div>
+                          <div className="text-sm line-clamp-2 bg-secondary p-2 rounded">
+                            {contact.message}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="py-4 text-center text-muted-foreground">
+                      {searchQuery ? "検索条件に一致するお問い合わせはありません" : "お問い合わせはありません"}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // デスクトップ表示
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>日時</TableHead>
+                      <TableHead>名前</TableHead>
+                      <TableHead>カテゴリ</TableHead>
+                      <TableHead>ステータス</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredContacts && filteredContacts.length > 0 ? (
+                      filteredContacts.map((contact: any) => (
+                        <TableRow key={contact.id}>
+                          <TableCell>{contact.id}</TableCell>
+                          <TableCell>{new Date(contact.createdAt).toLocaleDateString("ja-JP")}</TableCell>
+                          <TableCell>{contact.name}</TableCell>
+                          <TableCell>{getCategoryName(contact.category)}</TableCell>
+                          <TableCell>
+                            {contact.status === "new" && <Badge variant="default">新規</Badge>}
+                            {contact.status === "in_progress" && <Badge variant="outline">対応中</Badge>}
+                            {contact.status === "resolved" && <Badge variant="secondary">解決済み</Badge>}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedContact(contact);
+                                setOpenContactDialog(true);
+                              }}
+                            >
+                              詳細
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4">
+                          {searchQuery ? "検索条件に一致するお問い合わせはありません" : "お問い合わせはありません"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* システム情報タブ */}
+        <TabsContent value="system" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>ユーザー統計</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>総ユーザー数:</span>
+                    <span className="font-semibold">{stats?.totalUsers || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>アクティブユーザー:</span>
+                    <span className="font-semibold">{stats?.activeUsers || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>コンテンツ統計</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>総プリセット数:</span>
+                    <span className="font-semibold">{stats?.totalPresets || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>過去24時間の新規プリセット:</span>
+                    <span className="font-semibold">{stats?.newPresets24h || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>総コメント数:</span>
+                    <span className="font-semibold">{stats?.totalComments || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>プリセットタイプ別統計</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>INPUT_FX:</span>
+                    <span className="font-semibold">{stats?.presetsByType?.INPUT_FX || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>TRACK_FX:</span>
+                    <span className="font-semibold">{stats?.presetsByType?.TRACK_FX || 0}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>システムメンテナンス</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2 text-yellow-600">
+                  <AlertTriangle className="h-5 w-5" />
+                  <p>システムメンテナンス機能は現在開発中です。将来のアップデートで追加される予定です。</p>
+                </div>
+                <div className="flex flex-col md:flex-row gap-2">
+                  <Button variant="outline" disabled>データベースバックアップ</Button>
+                  <Button variant="outline" disabled>キャッシュクリア</Button>
+                  <Button variant="outline" disabled>ログファイル表示</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* ユーザー詳細ダイアログ */}
+      {renderUserDialog()}
+      
+      {/* お問い合わせ詳細ダイアログ */}
+      {renderContactDialog()}
+    </div>
+  );
+}

@@ -1,0 +1,272 @@
+[
+  {
+    "name": "hogeee",
+    "userId": 1,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "bug",
+    "message": "おもい",
+    "id": 10,
+    "status": "resolved",
+    "createdAt": "2025-05-06T01:50:08.425Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 10,
+        "message": "しらんがな",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T01:51:37.193Z"
+      },
+      {
+        "id": 2,
+        "contactId": 10,
+        "message": "だまれ",
+        "isAdmin": false,
+        "createdAt": "2025-05-06T01:55:58.062Z"
+      },
+      {
+        "id": 3,
+        "contactId": 10,
+        "message": "シネ",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T01:56:56.425Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 2,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "bug",
+    "message": "RUSYに勝てない",
+    "id": 11,
+    "status": "in_progress",
+    "createdAt": "2025-05-06T07:40:00.807Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 11,
+        "message": "しらんがな",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T07:40:55.341Z"
+      },
+      {
+        "id": 2,
+        "contactId": 11,
+        "message": "なんとかしろ",
+        "isAdmin": false,
+        "createdAt": "2025-05-06T07:42:27.825Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 2,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "bug",
+    "message": "はにゃこにちわ",
+    "id": 12,
+    "status": "resolved",
+    "createdAt": "2025-05-06T08:10:29.449Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 12,
+        "message": "こんにちは",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T08:11:07.934Z"
+      },
+      {
+        "id": 2,
+        "contactId": 12,
+        "message": "やあやあ",
+        "isAdmin": false,
+        "createdAt": "2025-05-06T08:11:25.450Z"
+      },
+      {
+        "id": 3,
+        "contactId": 12,
+        "message": "ぶっとばすぞ",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T08:11:44.879Z"
+      },
+      {
+        "id": 4,
+        "contactId": 12,
+        "message": "解決しませんか？\n",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T08:12:07.028Z"
+      },
+      {
+        "id": 5,
+        "contactId": 12,
+        "message": "aaaaaaaaaaaaa",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T08:13:35.578Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 2,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "feature",
+    "message": "つかいにくいんじゃ",
+    "id": 13,
+    "status": "in_progress",
+    "createdAt": "2025-05-06T08:36:44.594Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 13,
+        "message": "わかってらい",
+        "isAdmin": true,
+        "createdAt": "2025-05-06T08:37:15.190Z"
+      },
+      {
+        "id": 2,
+        "contactId": 13,
+        "message": "だまれい",
+        "isAdmin": false,
+        "createdAt": "2025-05-06T08:37:34.140Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 2,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "feature",
+    "message": "Cablesに対応させろや",
+    "id": 14,
+    "status": "in_progress",
+    "createdAt": "2025-05-07T01:59:19.130Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 14,
+        "message": "むり",
+        "isAdmin": true,
+        "createdAt": "2025-05-07T02:00:14.716Z"
+      },
+      {
+        "id": 2,
+        "contactId": 14,
+        "message": "ころしますわよ",
+        "isAdmin": false,
+        "createdAt": "2025-05-07T02:01:43.473Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 2,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "other",
+    "message": "しねや",
+    "id": 15,
+    "status": "in_progress",
+    "createdAt": "2025-05-07T05:25:43.361Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 15,
+        "message": "おまえがしねや",
+        "isAdmin": true,
+        "createdAt": "2025-05-07T05:26:13.087Z"
+      },
+      {
+        "id": 2,
+        "contactId": 15,
+        "message": "😠",
+        "isAdmin": false,
+        "createdAt": "2025-05-07T05:26:50.674Z"
+      },
+      {
+        "id": 3,
+        "contactId": 15,
+        "message": "だまろう",
+        "isAdmin": true,
+        "createdAt": "2025-05-07T05:27:18.104Z"
+      },
+      {
+        "id": 4,
+        "contactId": 15,
+        "message": "ころすぞ",
+        "isAdmin": false,
+        "createdAt": "2025-05-07T05:29:15.142Z"
+      }
+    ]
+  },
+  {
+    "name": "ほげー",
+    "contactMethod": "twitter",
+    "contactDetail": "@aaaaaa",
+    "category": "account",
+    "message": "aaaaaaaa",
+    "id": 16,
+    "status": "resolved",
+    "createdAt": "2025-05-08T04:29:13.508Z"
+  },
+  {
+    "name": "Spitsnase893",
+    "userId": 5,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "account",
+    "message": "荒らしがいる",
+    "isAnonymous": false,
+    "id": 17,
+    "status": "resolved",
+    "createdAt": "2025-05-08T14:07:09.877Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 17,
+        "message": "殺した",
+        "isAdmin": true,
+        "createdAt": "2025-05-08T14:07:28.775Z"
+      },
+      {
+        "id": 2,
+        "contactId": 17,
+        "message": "gg",
+        "isAdmin": false,
+        "createdAt": "2025-05-08T14:07:53.721Z"
+      },
+      {
+        "id": 3,
+        "contactId": 17,
+        "message": "nf",
+        "isAdmin": true,
+        "createdAt": "2025-05-08T14:08:18.971Z"
+      }
+    ]
+  },
+  {
+    "name": "admin",
+    "userId": 1,
+    "contactMethod": "twitter",
+    "contactDetail": "",
+    "category": "bug",
+    "message": "うへへへ",
+    "isAnonymous": false,
+    "id": 18,
+    "status": "in_progress",
+    "createdAt": "2025-05-15T02:03:14.841Z",
+    "replies": [
+      {
+        "id": 1,
+        "contactId": 18,
+        "message": "なんや",
+        "isAdmin": true,
+        "createdAt": "2025-05-15T02:04:01.338Z"
+      }
+    ]
+  }
+]

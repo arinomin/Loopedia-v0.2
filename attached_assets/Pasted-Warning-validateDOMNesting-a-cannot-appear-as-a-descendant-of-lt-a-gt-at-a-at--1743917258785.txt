@@ -1,0 +1,31 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=d7347eee:337:18
+    at div
+    at div
+    at div
+    at div
+    at nav
+    at Navbar (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/src/components/navbar.tsx:23:34)
+    at div
+    at App (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/src/App.tsx?v=_N7wWayAiBY6H3xcn7F7H:33:26)
+    at QueryClientProvider (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d7347eee:2805:3)
+    at AppWrapper
+at a
+at a
+at https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=d7347eee:337:18
+at div
+at div
+at div
+at div
+at nav
+at Navbar (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/src/components/navbar.tsx:23:34)
+at div
+at App (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/src/App.tsx?v=_N7wWayAiBY6H3xcn7F7H:33:26)
+at QueryClientProvider (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d7347eee:2805:3)
+at AppWrapper
+at t.value (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://51dc5d39-dbe1-41f4-9168-939a6445aae3-00-31rmsmh6yzjfw.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
