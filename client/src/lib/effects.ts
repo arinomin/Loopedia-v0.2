@@ -409,3 +409,78 @@ const OSCBOT_PARAMETERS = {
   "OSCBOT_MOD_SENS": { name: "OSCBOT_MOD_SENS", type: "range", min: -50, max: 50, step: 1, defaultValue: 0 },
   "OSCBOT_BALANCE": { name: "OSCBOT_BALANCE", type: "range", min: 0, max: 100, step: 1, defaultValue: 50 }
 };
+
+import type { EffectRecordingType, BankType, SlotType, FxGroup } from "@shared/schema";
+
+export const BANKS: BankType[] = ["A", "B", "C", "D"];
+export const SLOTS: SlotType[] = ["A", "B", "C", "D"];
+
+export function getAvailableBanks(effectRecordingType: EffectRecordingType, fxGroup: FxGroup): BankType[] {
+  switch (effectRecordingType) {
+    case "ALL_32":
+      return BANKS;
+    case "INPUT_16":
+      return fxGroup === "input" ? BANKS : [];
+    case "TRACK_16":
+      return fxGroup === "track" ? BANKS : [];
+    case "FX4":
+      return ["A"];
+    default:
+      return BANKS;
+  }
+}
+
+export function getAvailableSlots(effectRecordingType: EffectRecordingType): SlotType[] {
+  switch (effectRecordingType) {
+    case "ALL_32":
+    case "INPUT_16":
+    case "TRACK_16":
+      return SLOTS;
+    case "FX4":
+      return SLOTS;
+    default:
+      return SLOTS;
+  }
+}
+
+export function isSlotEnabled(
+  effectRecordingType: EffectRecordingType,
+  fxGroup: FxGroup,
+  bank: BankType,
+  slot: SlotType
+): boolean {
+  const availableBanks = getAvailableBanks(effectRecordingType, fxGroup);
+  const availableSlots = getAvailableSlots(effectRecordingType);
+  
+  return availableBanks.includes(bank) && availableSlots.includes(slot);
+}
+
+export function parsePositionToBankSlot(position: string | null): { bank: BankType; slot: SlotType } {
+  if (!position) return { bank: "A", slot: "A" };
+  
+  const upperPosition = position.toUpperCase();
+  
+  if (upperPosition.startsWith("INPUT_")) {
+    const slot = upperPosition.replace("INPUT_", "") as SlotType;
+    return { bank: "A", slot: SLOTS.includes(slot) ? slot : "A" };
+  }
+  
+  if (upperPosition.startsWith("TRACK_")) {
+    const slot = upperPosition.replace("TRACK_", "") as SlotType;
+    return { bank: "A", slot: SLOTS.includes(slot) ? slot : "A" };
+  }
+  
+  const slot = upperPosition as SlotType;
+  return { bank: "A", slot: SLOTS.includes(slot) ? slot : "A" };
+}
+
+export function formatBankSlotLabel(fxGroup: FxGroup, bank: BankType, slot: SlotType): string {
+  return `${fxGroup === "input" ? "INPUT" : "TRACK"} FX - Bank ${bank} - FX ${slot}`;
+}
+
+export const EFFECT_RECORDING_TYPE_LABELS: Record<EffectRecordingType, string> = {
+  "ALL_32": "全32エフェクト (INPUT FX 16個 + TRACK FX 16個)",
+  "INPUT_16": "INPUT FX 16個のみ",
+  "TRACK_16": "TRACK FX 16個のみ",
+  "FX4": "FX A～D の4個のみ"
+};
