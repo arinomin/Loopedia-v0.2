@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -19,6 +19,7 @@ export const presets = pgTable("presets", {
     .notNull()
     .references(() => users.id),
   type: text("type").notNull(),
+  effectRecordingType: text("effect_recording_type").notNull().default("ALL_32"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -27,13 +28,15 @@ export const effects = pgTable("effects", {
   presetId: integer("preset_id")
     .notNull()
     .references(() => presets.id),
-  position: text("position").notNull(),
+  position: text("position"),
   fxGroup: text("fx_group").notNull().default("input"),
+  bank: text("bank").notNull().default("A"),
+  slot: text("slot").notNull().default("A"),
   effectType: text("effect_type").notNull(),
   sw: boolean("sw").notNull().default(false),
   swMode: text("sw_mode").notNull().default("TOGGLE"),
   insert: text("insert").notNull().default("ALL"),
-  parameters: text("parameters").notNull(),
+  parameters: jsonb("parameters").notNull(),
 });
 
 export const tags = pgTable("tags", {
@@ -80,12 +83,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertPresetSchema = createInsertSchema(presets).pick({
   name: true,
   type: true,
+  effectRecordingType: true,
+}).extend({
+  effectRecordingType: z.enum(["ALL_32", "INPUT_16", "TRACK_16", "FX4"]).default("ALL_32"),
 });
 
 export const insertEffectSchema = createInsertSchema(effects).pick({
   presetId: true,
   position: true,
   fxGroup: true,
+  bank: true,
+  slot: true,
   effectType: true,
   sw: true,
   swMode: true,
@@ -93,14 +101,20 @@ export const insertEffectSchema = createInsertSchema(effects).pick({
   parameters: true,
 }).extend({
   fxGroup: z.enum(["input", "track"]).default("input"),
+  bank: z.enum(["A", "B", "C", "D"]).default("A"),
+  slot: z.enum(["A", "B", "C", "D"]).default("A"),
   parameters: z.union([
     z.string(),
     z.record(z.any())
   ]).transform(params => {
     if (typeof params === 'string') {
-      return params;
+      try {
+        return JSON.parse(params);
+      } catch {
+        return {};
+      }
     }
-    return JSON.stringify(params);
+    return params;
   })
 });
 
@@ -156,6 +170,9 @@ export type PresetList = Preset & {
   tags: Tag[];
 };
 
+export type EffectRecordingType = "ALL_32" | "INPUT_16" | "TRACK_16" | "FX4";
+export type BankType = "A" | "B" | "C" | "D";
+export type SlotType = "A" | "B" | "C" | "D";
 export type EffectType = "INPUT_FX" | "TRACK_FX" | "INPUT_TRACK_FX";
 export type EffectPosition = "A" | "B" | "C" | "D";
 export type ExtendedEffectPosition = "INPUT_A" | "INPUT_B" | "INPUT_C" | "INPUT_D" | "TRACK_A" | "TRACK_B" | "TRACK_C" | "TRACK_D";

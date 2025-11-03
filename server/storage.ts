@@ -78,27 +78,16 @@ export class DbStorage implements IStorage {
     const limit = options?.limit || 20;
     const offset = (page - 1) * limit;
 
-    let query = db.select({
+    const baseQuery = db.select({
       preset: presets,
       user: users,
     })
     .from(presets)
     .leftJoin(users, eq(presets.userId, users.id));
 
-    if (options?.userId) {
-      query = query.where(eq(presets.userId, options.userId));
-    }
-
-    if (options?.tagId) {
-      const presetIdsWithTag = await db.select({ presetId: presetTags.presetId })
-        .from(presetTags)
-        .where(eq(presetTags.tagId, options.tagId));
-      
-      const ids = presetIdsWithTag.map(pt => pt.presetId);
-      if (ids.length === 0) return [];
-    }
-
-    const results = await query
+    const results = await (options?.userId 
+      ? baseQuery.where(eq(presets.userId, options.userId))
+      : baseQuery)
       .orderBy(desc(presets.createdAt))
       .limit(limit)
       .offset(offset);
@@ -195,6 +184,7 @@ export class DbStorage implements IStorage {
       await db.insert(effects).values({
         ...effect,
         presetId: newPreset.id,
+        parameters: effect.parameters as any,
       });
     }
 
