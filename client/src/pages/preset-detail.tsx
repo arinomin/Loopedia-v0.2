@@ -3,29 +3,15 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { formatDate } from "@/lib/utils";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { PresetWithDetails } from "@shared/schema";
-import { getEffectParameters } from "@/lib/effects";
-import { Share2, Edit, Trash2 } from "lucide-react";
-import { deletePreset, updatePresetName } from "@/lib/api";
-import { Input } from "@/components/ui/input";
-import { ArrowLeft } from "lucide-react"; // アイコンをインポート
-import { ChevronDown } from "lucide-react"; // アイコンをインポート
-import { Copy } from "lucide-react";
-import { UserBadge } from "@/components/user-badge";
-import { SocialShare } from "@/components/share/social-share";
-import DevBadgeImg from "../assets/badges/DevBadge.png";
-import LoopBadgeImg from "../assets/badges/LoopBadge.png";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,20 +30,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { formatDate } from "@/lib/utils";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { PresetWithDetails, BankType, SlotType, FxGroup } from "@shared/schema";
+import { getEffectParameters, BANKS, SLOTS, EFFECT_RECORDING_TYPE_LABELS } from "@/lib/effects";
+import { deletePreset, updatePresetName } from "@/lib/api";
+import { Share2, Edit, Trash2, ArrowLeft, ChevronDown, Copy } from "lucide-react";
+import { UserBadge } from "@/components/user-badge";
+import { SocialShare } from "@/components/share/social-share";
+import { convertLegacyEffectsToGrid, getEffect, getEnabledBanks, getEnabledSlots, EffectGrid } from "@/lib/effect-grid";
 
 export default function PresetDetail() {
   const { id } = useParams<{ id: string }>();
@@ -83,13 +66,38 @@ export default function PresetDetail() {
     queryKey: ["/api/auth/me"],
   });
 
+  const [currentFxGroup, setCurrentFxGroup] = useState<FxGroup>("input");
+  const [currentBank, setCurrentBank] = useState<BankType>("A");
+  const [currentSlot, setCurrentSlot] = useState<SlotType>("A");
+
+  const effectGrid: EffectGrid | null = preset && preset.effects
+    ? convertLegacyEffectsToGrid(preset.effects)
+    : null;
+
+  const effectRecordingType = (preset?.effectRecordingType || "ALL_32") as import("@shared/schema").EffectRecordingType;
+  const enabledBanks = getEnabledBanks(effectRecordingType, currentFxGroup);
+  const enabledSlots = getEnabledSlots(effectRecordingType);
+
+  const currentEffect = effectGrid ? getEffect(effectGrid, currentFxGroup, currentBank, currentSlot) : null;
+
   useEffect(() => {
     if (preset) {
       setNewPresetName(preset.name);
     }
   }, [preset]);
 
-  // プリセット名更新ミューテーション
+  useEffect(() => {
+    if (enabledBanks.length > 0 && !enabledBanks.includes(currentBank)) {
+      setCurrentBank(enabledBanks[0]);
+    }
+  }, [effectRecordingType, currentFxGroup, enabledBanks, currentBank]);
+
+  useEffect(() => {
+    if (enabledSlots.length > 0 && !enabledSlots.includes(currentSlot)) {
+      setCurrentSlot(enabledSlots[0]);
+    }
+  }, [effectRecordingType, enabledSlots, currentSlot]);
+
   const updateNameMutation = useMutation({
     mutationFn: (name: string) => updatePresetName(parseInt(id), name),
     onSuccess: () => {
@@ -109,21 +117,15 @@ export default function PresetDetail() {
     },
   });
 
-  // プリセット削除ミューテーション
   const deleteMutation = useMutation({
     mutationFn: () => deletePreset(parseInt(id)),
     onSuccess: () => {
-      // プリセット一覧のキャッシュを無効化して強制的に再取得されるようにする
       queryClient.invalidateQueries({ queryKey: ["/api/presets"] });
-
-      // 削除成功メッセージを表示
       toast({
         title: "プリセット削除",
         description: "プリセットが正常に削除されました。",
       });
-
-      // プリセット一覧ページへリダイレクト
-      navigate("/");
+      navigate("/presets");
     },
     onError: () => {
       toast({
@@ -134,571 +136,345 @@ export default function PresetDetail() {
     },
   });
 
+  const handleCopyPreset = () => {
+    navigate("/preset/create", {
+      state: { preset },
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-        </div>
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center">読み込み中...</div>
       </div>
     );
   }
 
   if (error || !preset) {
     return (
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="bg-red-50 p-4 rounded-md">
-          <h2 className="text-lg font-medium text-red-800">
-            プリセットの読み込みに失敗しました
-          </h2>
-          <p className="mt-2 text-sm text-red-700">
-            プリセットが存在しないか、サーバーエラーが発生しました。
-          </p>
-          <div className="mt-4">
-            <Link
-              href="/"
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              プリセット一覧に戻る
-            </Link>
-          </div>
+      <div className="container mx-auto py-8 px-4">
+        <div className="text-center text-red-500">
+          プリセットが見つかりませんでした
         </div>
       </div>
     );
   }
 
+  const isOwner = currentUser?.id === preset.user.id;
+  const effectParameters = currentEffect ? getEffectParameters(currentEffect.effectType) : [];
+
   return (
-    <div className="max-w-7xl mx-auto pb-6 px-4 sm:px-6 lg:px-8 sm:py-6">
-      <div className="mb-2 sm:mb-6">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          プリセット一覧に戻る
+    <div className="container mx-auto py-8 px-4 max-w-5xl">
+      <div className="mb-6">
+        <Link href="/presets">
+          <Button variant="ghost" size="sm" className="mb-2" data-testid="button-back">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            戻る
+          </Button>
         </Link>
+
+        <div className="flex items-start justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2" data-testid="text-preset-name">
+              {preset.name}
+            </h1>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <UserBadge user={preset.user} />
+              <span>•</span>
+              <span data-testid="text-created-at">{formatDate(preset.createdAt)}</span>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" data-testid="button-share">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  共有
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>プリセットを共有</SheetTitle>
+                  <SheetDescription>
+                    このプリセットを共有するためのリンクやSNSボタンです
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6">
+                  <SocialShare
+                    url={window.location.href}
+                    title={`${preset.name} - Loopedia`}
+                    description={`${preset.user.nickname || preset.user.username}さんのRC505mk2プリセット`}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyPreset}
+              data-testid="button-copy"
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              コピーして編集
+            </Button>
+
+            {isOwner && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditDialogOpen(true)}
+                  data-testid="button-edit"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  編集
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  data-testid="button-delete"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  削除
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div>
-            <CardTitle className="text-2xl font-semibold">
-              {preset.name}
-            </CardTitle>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {preset.tags.map((tag) => (
-                <Badge
-                  key={tag.id}
-                  variant="outline"
-                  className="bg-primary/10 text-primary border-primary/20"
-                >
-                  {tag.name}
-                </Badge>
-              ))}
-            </div>
-          </div>
-          {/* "Copy and Edit" button has been removed as requested */}
-        </CardHeader>
-
-        <CardContent>
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex flex-col space-y-3">
-              {/* ユーザー情報 */}
-              <div className="flex items-center">
-                <div className="flex-shrink-0 mr-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs">
-                    {(preset.user.nickname || preset.user.username)
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </div>
-                </div>
-                <div>
-                  <UserBadge
-                    user={preset.user}
-                    showUsername={false}
-                    size="sm"
-                    className="text-foreground"
-                  />
-                  <span className="text-muted-foreground">
-                    {" "}
-                    @{preset.user.username}
-                  </span>
-                  {/* 作成日時を小さく薄く表示 */}
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(preset.createdAt)}
-                  </div>
-                </div>
-              </div>
-
-              {/* タイプをタグとして表示 */}
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Badge
-                  variant="secondary"
-                  className="bg-gray-100 text-gray-700 border-gray-200"
-                >
-                  {preset.type}
-                </Badge>
-              </div>
+      <div className="space-y-6">
+        <Card data-testid="card-basic-info">
+          <CardHeader>
+            <CardTitle>基本情報</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">プリセットタイプ</div>
+              <Badge variant="secondary" data-testid="badge-preset-type">
+                {preset.type}
+              </Badge>
             </div>
 
-            {/* その他操作ボタン */}
-            <div className="flex items-center mt-4 space-x-2 flex-wrap">
-              {/* 共有ボタン */}
-              <SocialShare
-                title={`RC505mk2プリセット 「${preset.name}」`}
-                description={`${preset.user.nickname || preset.user.username}さんが作成したプリセットを見てみよう！`}
-                url={`${window.location.origin}/presets/${preset.id}`}
-                size="sm"
-                variant="ghost"
-              />
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">エフェクト記録形式</div>
+              <Badge variant="outline" data-testid="badge-recording-type">
+                {EFFECT_RECORDING_TYPE_LABELS[effectRecordingType as keyof typeof EFFECT_RECORDING_TYPE_LABELS]}
+              </Badge>
+            </div>
 
-              {/* 編集ボタン - 自分のプリセットの場合のみ表示 */}
-              {currentUser && currentUser.id === preset.userId && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center space-x-1 h-8 px-2"
-                        onClick={() => setIsEditDialogOpen(true)}
+            {preset.tags && preset.tags.length > 0 && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-2">タグ</div>
+                <div className="flex flex-wrap gap-2">
+                  {preset.tags.map((tag) => (
+                    <Badge key={tag.id} variant="outline" data-testid={`badge-tag-${tag.id}`}>
+                      {tag.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-effects">
+          <CardHeader>
+            <CardTitle>エフェクト設定</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={currentFxGroup} onValueChange={(v) => setCurrentFxGroup(v as FxGroup)}>
+              <TabsList className="grid w-full grid-cols-2 mb-4" data-testid="tabs-fx-group">
+                <TabsTrigger value="input" data-testid="tab-input-fx">
+                  INPUT FX
+                </TabsTrigger>
+                <TabsTrigger value="track" data-testid="tab-track-fx">
+                  TRACK FX
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="input">
+                <Tabs value={currentBank} onValueChange={(v) => setCurrentBank(v as BankType)}>
+                  <TabsList className="grid w-full grid-cols-4 mb-4" data-testid="tabs-bank">
+                    {BANKS.map((bank) => (
+                      <TabsTrigger
+                        key={bank}
+                        value={bank}
+                        disabled={!enabledBanks.includes(bank)}
+                        data-testid={`tab-bank-${bank}`}
                       >
-                        <Edit className="h-4 w-4 text-gray-500" />
-                        <span className="text-xs">編集</span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>プリセット名を編集</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
+                        Bank {bank}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
 
-              {/* 削除ボタン - 自分のプリセットまたはadminユーザーの場合に表示 */}
-              {currentUser &&
-                (currentUser.id === preset.userId ||
-                  currentUser.username === "admin") && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="flex items-center space-x-1 h-8 px-2"
-                          onClick={() => setIsDeleteDialogOpen(true)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                          <span className="text-xs">削除</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>プリセットを削除</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-            </div>
-          </div>
-
-          {/* Effect Settings Display */}
-          <div className="border-t border-gray-200 mt-6 pt-6">
-            <dl>
-              {/* エフェクト表示のタイトル - INPUT_TRACK_FXタイプの場合 */}
-              {preset.type === "INPUT_TRACK_FX" && (
-                <div className="flex justify-between mb-4">
-                  <h3 className="text-xl font-bold">インプット＆トラックFX</h3>
-                </div>
-              )}
-              
-              {/* エフェクト表示 - 通常のプリセットタイプ */}
-              {preset.type !== "INPUT_TRACK_FX" && preset.effects.map((effect, index) => {
-                const parameters = JSON.parse(effect.parameters);
-                const effectParams = getEffectParameters(effect.effectType);
-                const bgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
-              
-
-                // パラメータを分類
-                const controlParams = {
-                  SW: effect.sw ? "ON" : "OFF",
-                  "SW MODE": effect.swMode,
-                  INSERT: effect.insert,
-                };
-                const generalParams: Record<string, any> = {};
-                const seqControlParams: Record<string, any> = {};
-                const seqValueParams: Record<string, any> = {};
-
-                // パラメータをグループ分け
-                Object.entries(parameters).forEach(([key, value]) => {
-                  // シーケンサーコントロールパラメータ
-                  if (key.startsWith("SEQ_") && !key.startsWith("SEQ_VAL")) {
-                    seqControlParams[key] = value;
-                  }
-                  // シーケンサー値パラメータ
-                  else if (key.startsWith("SEQ_VAL")) {
-                    seqValueParams[key] = value;
-                  }
-                  // 通常パラメータ
-                  else {
-                    generalParams[key] = value;
-                  }
-                });
-
-                // 表示名を取得する関数
-                const getDisplayName = (key: string) => {
-                  // エフェクトパラメータから表示名を検索
-                  const param = effectParams.find((p) => p.name === key);
-                  if (param && param.display_name) {
-                    return param.display_name;
-                  }
-                  // 通常のコントロールパラメータはそのまま返す
-                  if (key === "SW" || key === "SW MODE" || key === "INSERT") {
-                    return key;
-                  }
-                  // キーからプリフィックスを除去して表示名として使用
-                  return key.replace(/^[A-Z]+_/, "");
-                };
-
-                // パラメータ値をレンダリングする関数
-                const renderParameterValue = (value: any) => {
-                  const valueStr = String(value);
-
-                  // notesの場合は画像を表示
-                  const noteMatch = valueStr.match(/^notes\d+$/);
-                  if (noteMatch) {
-                    return (
-                      <img
-                        src={`/src/assets/notes/${valueStr}.png`}
-                        alt={valueStr}
-                        className="h-6 object-contain"
-                      />
-                    );
-                  }
-
-                  // それ以外の場合はテキスト表示
-                  return valueStr;
-                };
-
-                return (
-                  <Collapsible
-                    key={effect.id}
-                    className={`${bgClass} rounded-lg border border-primary/20 mb-4 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 w-full`}
-                  >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full group bg-primary/10 px-3 py-3 sm:px-4">
-                      <div className="flex items-center">
-                        <div className="bg-primary text-white font-bold rounded-full h-8 w-8 flex items-center justify-center mr-2">
-                          {effect.position}
-                        </div>
-                        <h3 className="text-base sm:text-lg font-medium text-primary">
-                          {effect.effectType}
-                        </h3>
-                      </div>
-                      <div className="flex items-center">
-                        <Badge
-                          className={`mr-2 ${effect.sw ? "bg-green-500" : "bg-gray-400"}`}
-                        >
-                          {effect.sw ? "ON" : "OFF"}
-                        </Badge>
-                        <ChevronDown className="h-5 w-5 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
-                      </div>
-                    </CollapsibleTrigger>
-
-                    <CollapsibleContent>
-                      <div className="p-2 sm:p-4">
-                        {/* Effect Control Section */}
-                        <div className="mb-6">
-                          <h4 className="text-md font-semibold mb-3 text-primary">
-                            Effect Control
-                          </h4>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {Object.entries(controlParams).map(
-                              ([key, value]) => (
-                                <div
-                                  key={key}
-                                  className="bg-primary/5 p-2 rounded-lg border border-primary/10 hover:shadow-md transition-shadow"
-                                >
-                                  <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                    {key}
-                                  </div>
-                                  <div className="font-medium text-sm md:text-base">
-                                    {String(value)}
-                                  </div>
-                                </div>
-                              ),
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Parameters Section */}
-                        {Object.keys(generalParams).length > 0 && (
-                          <div className="mb-6">
-                            <h4 className="text-md font-semibold mb-3 text-primary">
-                              Parameters
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              {Object.entries(generalParams).map(
-                                ([key, value]) => (
-                                  <div
-                                    key={key}
-                                    className="bg-primary/5 p-2 rounded-lg border border-primary/10 hover:shadow-md transition-shadow"
-                                  >
-                                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                      {getDisplayName(key)}
-                                    </div>
-                                    <div className="font-medium text-sm md:text-base">
-                                      {renderParameterValue(value)}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Sequencer Control Section */}
-                        {Object.keys(seqControlParams).length > 0 && (
-                          <div className="mb-6">
-                            <h4 className="text-md font-semibold mb-3 text-primary">
-                              Sequencer Parameters
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              {Object.entries(seqControlParams).map(
-                                ([key, value]) => (
-                                  <div
-                                    key={key}
-                                    className="bg-primary/5 p-2 rounded-lg border border-primary/10 hover:shadow-md transition-shadow"
-                                  >
-                                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                      {getDisplayName(key)}
-                                    </div>
-                                    <div className="font-medium text-sm md:text-base">
-                                      {renderParameterValue(value)}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Sequencer Values Section */}
-                        {Object.keys(seqValueParams).length > 0 && (
-                          <div>
-                            <h4 className="text-md font-semibold mb-3 text-primary">
-                              Sequencer Values
-                            </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                              {Object.entries(seqValueParams).map(
-                                ([key, value]) => (
-                                  <div
-                                    key={key}
-                                    className="bg-primary/5 p-2 rounded-lg border border-primary/10 hover:shadow-md transition-shadow"
-                                  >
-                                    <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                                      {getDisplayName(key)}
-                                    </div>
-                                    <div className="font-medium text-sm md:text-base">
-                                      {renderParameterValue(value)}
-                                    </div>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                );
-              })}
-
-              {/* 通常プリセットでエフェクトがない場合 */}
-              {preset.type !== "INPUT_TRACK_FX" && preset.effects.length === 0 && (
-                <div className="px-4 py-5">
-                  <p className="text-muted-foreground">
-                    エフェクト設定がありません。
-                  </p>
-                </div>
-              )}
-              
-              {/* INPUT_TRACK_FXタイプのプリセット表示 */}
-              {preset.type === "INPUT_TRACK_FX" && (
-                <>
-                  {/* INPUT FXセクション */}
-                  {preset.inputEffects && preset.inputEffects.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold mb-3 text-primary inline-flex items-center">
-                        <div className="bg-blue-500 text-white font-bold rounded px-2 py-1 mr-2">INPUT FX</div>
-                      </h3>
-                      
-                      {preset.inputEffects.map((effect, index) => {
-                        const parameters = JSON.parse(effect.parameters);
-                        const bgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
-                        
-                        // パラメータを分類
-                        const controlParams = {
-                          SW: effect.sw ? "ON" : "OFF",
-                          "SW MODE": effect.swMode,
-                          INSERT: effect.insert,
-                        };
-                        
-                        const generalParams: Record<string, any> = {};
-                        Object.entries(parameters).forEach(([key, value]) => {
-                          if (!key.startsWith("SEQ_")) {
-                            generalParams[key] = value;
-                          }
-                        });
-                        
-                        return (
-                          <Collapsible
-                            key={effect.id}
-                            className={`${bgClass} rounded-lg border border-blue-300 mb-4 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 w-full`}
+                  {BANKS.map((bank) => (
+                    <TabsContent key={bank} value={bank}>
+                      <div className="flex gap-2 mb-4" data-testid="slots-selector">
+                        {SLOTS.map((slot) => (
+                          <Button
+                            key={slot}
+                            type="button"
+                            variant={currentSlot === slot ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentSlot(slot)}
+                            disabled={!enabledSlots.includes(slot)}
+                            data-testid={`button-slot-${slot}`}
                           >
-                            <CollapsibleTrigger className="flex items-center justify-between w-full group bg-blue-100 px-3 py-3 sm:px-4">
-                              <div className="flex items-center">
-                                <div className="bg-blue-500 text-white font-bold rounded-full h-8 w-8 flex items-center justify-center mr-2">
-                                  {effect.position.replace("INPUT_", "")}
-                                </div>
-                                <h3 className="text-base sm:text-lg font-medium text-blue-700">
-                                  {effect.effectType}
-                                </h3>
-                              </div>
-                              <div className="flex items-center">
-                                <Badge
-                                  className={`mr-2 ${effect.sw ? "bg-green-500" : "bg-gray-400"}`}
-                                >
-                                  {effect.sw ? "ON" : "OFF"}
-                                </Badge>
-                                <ChevronDown className="h-5 w-5 transition-transform duration-200 text-blue-700 group-data-[state=open]:rotate-180" />
-                              </div>
-                            </CollapsibleTrigger>
-                            
-                            <CollapsibleContent>
-                              <div className="p-2 sm:p-4">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  {Object.entries({...controlParams, ...generalParams}).map(
-                                    ([key, value]) => (
-                                      <div
-                                        key={key}
-                                        className="bg-blue-50 p-2 rounded-lg border border-blue-200 hover:shadow-md transition-shadow"
-                                      >
-                                        <div className="text-xs text-blue-600 uppercase tracking-wide">
-                                          {key.replace(/^[A-Z]+_/, "")}
-                                        </div>
-                                        <div className="font-medium text-sm md:text-base">
-                                          {String(value)}
-                                        </div>
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {/* TRACK FXセクション */}
-                  {preset.trackEffects && preset.trackEffects.length > 0 && (
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold mb-3 text-primary inline-flex items-center">
-                        <div className="bg-purple-500 text-white font-bold rounded px-2 py-1 mr-2">TRACK FX</div>
-                      </h3>
-                      
-                      {preset.trackEffects.map((effect, index) => {
-                        const parameters = JSON.parse(effect.parameters);
-                        const bgClass = index % 2 === 0 ? "bg-white" : "bg-gray-50";
-                        
-                        // パラメータを分類
-                        const controlParams = {
-                          SW: effect.sw ? "ON" : "OFF",
-                          "SW MODE": effect.swMode,
-                          INSERT: effect.insert,
-                        };
-                        
-                        const generalParams: Record<string, any> = {};
-                        Object.entries(parameters).forEach(([key, value]) => {
-                          if (!key.startsWith("SEQ_")) {
-                            generalParams[key] = value;
-                          }
-                        });
-                        
-                        return (
-                          <Collapsible
-                            key={effect.id}
-                            className={`${bgClass} rounded-lg border border-purple-300 mb-4 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 w-full`}
+                            FX {slot}
+                          </Button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </TabsContent>
+
+              <TabsContent value="track">
+                <Tabs value={currentBank} onValueChange={(v) => setCurrentBank(v as BankType)}>
+                  <TabsList className="grid w-full grid-cols-4 mb-4" data-testid="tabs-bank">
+                    {BANKS.map((bank) => (
+                      <TabsTrigger
+                        key={bank}
+                        value={bank}
+                        disabled={!enabledBanks.includes(bank)}
+                        data-testid={`tab-bank-${bank}`}
+                      >
+                        Bank {bank}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  {BANKS.map((bank) => (
+                    <TabsContent key={bank} value={bank}>
+                      <div className="flex gap-2 mb-4" data-testid="slots-selector">
+                        {SLOTS.map((slot) => (
+                          <Button
+                            key={slot}
+                            type="button"
+                            variant={currentSlot === slot ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentSlot(slot)}
+                            disabled={!enabledSlots.includes(slot)}
+                            data-testid={`button-slot-${slot}`}
                           >
-                            <CollapsibleTrigger className="flex items-center justify-between w-full group bg-purple-100 px-3 py-3 sm:px-4">
-                              <div className="flex items-center">
-                                <div className="bg-purple-500 text-white font-bold rounded-full h-8 w-8 flex items-center justify-center mr-2">
-                                  {effect.position.replace("TRACK_", "")}
-                                </div>
-                                <h3 className="text-base sm:text-lg font-medium text-purple-700">
-                                  {effect.effectType}
-                                </h3>
-                              </div>
-                              <div className="flex items-center">
-                                <Badge
-                                  className={`mr-2 ${effect.sw ? "bg-green-500" : "bg-gray-400"}`}
-                                >
-                                  {effect.sw ? "ON" : "OFF"}
-                                </Badge>
-                                <ChevronDown className="h-5 w-5 transition-transform duration-200 text-purple-700 group-data-[state=open]:rotate-180" />
-                              </div>
-                            </CollapsibleTrigger>
-                            
-                            <CollapsibleContent>
-                              <div className="p-2 sm:p-4">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                  {Object.entries({...controlParams, ...generalParams}).map(
-                                    ([key, value]) => (
-                                      <div
-                                        key={key}
-                                        className="bg-purple-50 p-2 rounded-lg border border-purple-200 hover:shadow-md transition-shadow"
-                                      >
-                                        <div className="text-xs text-purple-600 uppercase tracking-wide">
-                                          {key.replace(/^[A-Z]+_/, "")}
-                                        </div>
-                                        <div className="font-medium text-sm md:text-base">
-                                          {String(value)}
-                                        </div>
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-                        );
-                      })}
+                            FX {slot}
+                          </Button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </TabsContent>
+            </Tabs>
+
+            {currentEffect && (
+              <Card className="mt-4" data-testid="card-effect-detail">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {currentFxGroup === "input" ? "INPUT" : "TRACK"} FX - Bank {currentBank} - FX {currentSlot}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-sm text-muted-foreground">エフェクトタイプ</div>
+                      <div className="font-medium" data-testid="text-effect-type">
+                        {currentEffect.effectType}
+                      </div>
                     </div>
-                  )}
-                  
-                  {/* INPUT_TRACK_FXでエフェクトがない場合 */}
-                  {(!preset.inputEffects || preset.inputEffects.length === 0) && 
-                   (!preset.trackEffects || preset.trackEffects.length === 0) && (
-                    <div className="px-4 py-5">
-                      <p className="text-muted-foreground">
-                        エフェクト設定がありません。
-                      </p>
+                    <div>
+                      <div className="text-sm text-muted-foreground">ON/OFF</div>
+                      <div className="font-medium" data-testid="text-effect-sw">
+                        {currentEffect.sw ? "ON" : "OFF"}
+                      </div>
                     </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">スイッチモード</div>
+                      <div className="font-medium" data-testid="text-switch-mode">
+                        {currentEffect.swMode}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">インサート</div>
+                      <div className="font-medium" data-testid="text-insert">
+                        {currentEffect.insert}
+                      </div>
+                    </div>
+                  </div>
+
+                  {effectParameters.length > 0 && (
+                    <>
+                      <Separator />
+                      <Collapsible defaultOpen>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="w-full justify-between"
+                            type="button"
+                            data-testid="button-toggle-parameters"
+                          >
+                            <span>パラメータ ({effectParameters.length}個)</span>
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-3 mt-4">
+                          {effectParameters.map((param) => (
+                            <div key={param.name} className="grid grid-cols-2 gap-2">
+                              <div className="text-sm text-muted-foreground">
+                                {param.display_name || param.name}
+                              </div>
+                              <div className="text-sm font-medium" data-testid={`text-param-${param.name}`}>
+                                {currentEffect.parameters[param.name] !== undefined
+                                  ? String(currentEffect.parameters[param.name])
+                                  : "未設定"}
+                              </div>
+                            </div>
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </>
                   )}
-                </>
-              )}
-            </dl>
-          </div>
-        </CardContent>
-      </Card>
-      {/* プリセット名編集ダイアログ */}
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>プリセットを削除しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              この操作は取り消せません。このプリセットは完全に削除されます。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteMutation.mutate();
+                setIsDeleteDialogOpen(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid="button-confirm-delete"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>プリセット名の編集</DialogTitle>
+            <DialogTitle>プリセット名を編集</DialogTitle>
             <DialogDescription>
-              プリセットの名前を変更します。変更後は「保存」ボタンをクリックしてください。
+              プリセットの名前を変更します。
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -706,54 +482,27 @@ export default function PresetDetail() {
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
               placeholder="プリセット名"
-              className="w-full"
+              data-testid="input-edit-name"
             />
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => {
-                setNewPresetName(preset.name);
-                setIsEditDialogOpen(false);
-              }}
+              onClick={() => setIsEditDialogOpen(false)}
+              data-testid="button-cancel-edit"
             >
               キャンセル
             </Button>
             <Button
               onClick={() => updateNameMutation.mutate(newPresetName)}
-              disabled={!newPresetName.trim() || updateNameMutation.isPending}
+              disabled={!newPresetName || updateNameMutation.isPending}
+              data-testid="button-save-edit"
             >
               {updateNameMutation.isPending ? "保存中..." : "保存"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* プリセット削除確認ダイアログ */}
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>プリセットの削除</AlertDialogTitle>
-            <AlertDialogDescription>
-              このプリセットを削除しますか？この操作は取り消せません。
-              コメント、いいね、ブックマークなどの関連データもすべて削除されます。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>キャンセル</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {deleteMutation.isPending ? "削除中..." : "削除"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

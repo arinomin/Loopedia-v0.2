@@ -28,57 +28,44 @@ import {
 } from "@/components/ui/collapsible";
 import { ParameterInput } from "@/components/ui/parameter-input";
 import { useToast } from "@/hooks/use-toast";
-import { EFFECTS, TRACK_A_EFFECTS, getEffectParameters } from "@/lib/effects";
+import { EFFECTS, TRACK_A_EFFECTS, getEffectParameters, BANKS, SLOTS, EFFECT_RECORDING_TYPE_LABELS } from "@/lib/effects";
 import { getAppropriateEffectOptions } from "@/lib/effect-utils";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
-  EffectType,
-  EffectPosition,
-  ExtendedEffectPosition,
+  EffectRecordingType,
+  BankType,
+  SlotType,
+  FxGroup,
   SwitchMode,
   InsertType,
 } from "@shared/schema";
-import { ChevronDown } from "lucide-react";
+import {
+  EffectGrid,
+  EffectConfig,
+  createEmptyEffectGrid,
+  getEffect,
+  setEffect,
+  filterEnabledEffects,
+  convertLegacyEffectsToGrid,
+  getEnabledBanks,
+  getEnabledSlots,
+} from "@/lib/effect-grid";
+import { ChevronDown, ArrowLeft } from "lucide-react";
 import { LoginModal } from "@/components/auth/login-modal";
-import { ArrowLeft } from "lucide-react";
-
-// エフェクト設定の型定義
-interface EffectConfig {
-  position: EffectPosition | ExtendedEffectPosition;
-  effectType: string;
-  sw: boolean;
-  swMode: SwitchMode;
-  insert: InsertType;
-  parameters: Record<string, any>;
-}
-
-// 初期エフェクト設定
-const INITIAL_EFFECT_CONFIG: EffectConfig = {
-  position: "A",
-  effectType: "LPF",
-  sw: true,
-  swMode: "TOGGLE",
-  insert: "ALL",
-  parameters: {},
-};
 
 export default function PresetCreate() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
 
-  // 編集用のプリセットデータが渡されているか確認
   const locationState = window.history.state?.state?.preset;
   const sourcePreset = locationState || null;
 
-  // Fetch current user
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/me"],
   });
 
-  // ログインモーダルの状態
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // State for preset data
   const [presetName, setPresetName] = useState(
     sourcePreset ? `${sourcePreset.name} (コピー)` : "",
   );
@@ -89,976 +76,499 @@ export default function PresetCreate() {
           .join(", ")
       : "",
   );
-  const [fxType, setFxType] = useState<EffectType>(
+  const [presetType, setPresetType] = useState<string>(
     sourcePreset ? sourcePreset.type : "INPUT_FX",
   );
-  
-  // タブ状態管理（単一変数で管理）
-  const [currentTab, setCurrentTab] = useState<EffectPosition>("A");
-
-  // 初期エフェクト設定
-  const initialEffects: Record<EffectPosition, EffectConfig> = {
-    A: { ...INITIAL_EFFECT_CONFIG, position: "A", effectType: "LPF" },
-    B: { ...INITIAL_EFFECT_CONFIG, position: "B", effectType: "LPF" },
-    C: { ...INITIAL_EFFECT_CONFIG, position: "C", effectType: "LPF" },
-    D: { ...INITIAL_EFFECT_CONFIG, position: "D", effectType: "LPF" },
-  };
-  
-  // INPUT_TRACK_FX用の初期エフェクト設定
-  const initialInputEffects: Record<EffectPosition, EffectConfig> = {
-    A: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_A", effectType: "LPF" },
-    B: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_B", effectType: "LPF" },
-    C: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_C", effectType: "LPF" },
-    D: { ...INITIAL_EFFECT_CONFIG, position: "INPUT_D", effectType: "LPF" },
-  };
-  
-  const initialTrackEffects: Record<EffectPosition, EffectConfig> = {
-    A: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_A", effectType: "LPF" },
-    B: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_B", effectType: "LPF" },
-    C: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_C", effectType: "LPF" },
-    D: { ...INITIAL_EFFECT_CONFIG, position: "TRACK_D", effectType: "LPF" },
-  };
-
-  // 通常のエフェクト設定
-  const [effects, setEffects] = useState<Record<EffectPosition, EffectConfig>>(
-    () => {
-      if (!sourcePreset || !sourcePreset.effects) {
-        return initialEffects;
-      }
-
-      const sourceEffects = { ...initialEffects };
-
-      sourcePreset.effects.forEach((effect: any) => {
-        if (effect.position && ["A", "B", "C", "D"].includes(effect.position)) {
-          // パラメータがJSON文字列の場合はパースする
-          let parsedParameters = {};
-
-          try {
-            if (effect.parameters) {
-              if (typeof effect.parameters === "string") {
-                parsedParameters = JSON.parse(effect.parameters);
-              } else {
-                parsedParameters = effect.parameters;
-              }
-            }
-          } catch (err) {
-            console.error("パラメータのパースに失敗:", err);
-          }
-
-          sourceEffects[effect.position as EffectPosition] = {
-            position: effect.position as EffectPosition,
-            effectType: effect.effectType || "LPF",
-            sw: effect.sw !== undefined ? effect.sw : true,
-            swMode: effect.swMode || "TOGGLE",
-            insert: effect.insert || "ALL",
-            parameters: parsedParameters,
-          };
-        }
-      });
-
-      return sourceEffects;
-    },
+  const [effectRecordingType, setEffectRecordingType] = useState<EffectRecordingType>(
+    sourcePreset?.effectRecordingType || "ALL_32"
   );
 
-  // INPUTエフェクト設定
-  const [inputEffects, setInputEffects] = useState<Record<EffectPosition, EffectConfig>>(initialInputEffects);
-  
-  // TRACKエフェクト設定
-  const [trackEffects, setTrackEffects] = useState<Record<EffectPosition, EffectConfig>>(initialTrackEffects);
+  const [effectGrid, setEffectGrid] = useState<EffectGrid>(() => {
+    if (sourcePreset && sourcePreset.effects && sourcePreset.effects.length > 0) {
+      return convertLegacyEffectsToGrid(sourcePreset.effects);
+    }
+    return createEmptyEffectGrid();
+  });
 
-  // 初期化時にすべてのエフェクトのパラメータを設定
+  const [currentFxGroup, setCurrentFxGroup] = useState<FxGroup>("input");
+  const [currentBank, setCurrentBank] = useState<BankType>("A");
+  const [currentSlot, setCurrentSlot] = useState<SlotType>("A");
+
+  const currentEffect = getEffect(effectGrid, currentFxGroup, currentBank, currentSlot);
+
+  const enabledBanks = getEnabledBanks(effectRecordingType, currentFxGroup);
+  const enabledSlots = getEnabledSlots(effectRecordingType);
+
   useEffect(() => {
-    // 通常のエフェクト設定を初期化
-    const initializedEffects = { ...effects };
-    Object.keys(initializedEffects).forEach((position) => {
-      const effect = initializedEffects[position as EffectPosition];
-      const parameters = getEffectParameters(effect.effectType);
-      const defaultParams: Record<string, any> = {};
-      parameters.forEach((param) => {
-        defaultParams[param.name] = param.defaultValue;
-      });
-      initializedEffects[position as EffectPosition].parameters = {
-        ...defaultParams,
-        ...effect.parameters,
-      };
-    });
-    setEffects(initializedEffects);
-    
-    // INPUT用エフェクト設定を初期化
-    const initializedInputEffects = { ...inputEffects };
-    Object.keys(initializedInputEffects).forEach((position) => {
-      const effect = initializedInputEffects[position as EffectPosition];
-      const parameters = getEffectParameters(effect.effectType);
-      const defaultParams: Record<string, any> = {};
-      parameters.forEach((param) => {
-        defaultParams[param.name] = param.defaultValue;
-      });
-      initializedInputEffects[position as EffectPosition].parameters = {
-        ...defaultParams,
-        ...effect.parameters,
-      };
-    });
-    setInputEffects(initializedInputEffects);
-    
-    // TRACK用エフェクト設定を初期化
-    const initializedTrackEffects = { ...trackEffects };
-    Object.keys(initializedTrackEffects).forEach((position) => {
-      const effect = initializedTrackEffects[position as EffectPosition];
-      const parameters = getEffectParameters(effect.effectType);
-      const defaultParams: Record<string, any> = {};
-      parameters.forEach((param) => {
-        defaultParams[param.name] = param.defaultValue;
-      });
-      initializedTrackEffects[position as EffectPosition].parameters = {
-        ...defaultParams,
-        ...effect.parameters,
-      };
-    });
-    setTrackEffects(initializedTrackEffects);
-  }, []);
+    if (enabledBanks.length > 0 && !enabledBanks.includes(currentBank)) {
+      setCurrentBank(enabledBanks[0]);
+    }
+  }, [effectRecordingType, currentFxGroup, enabledBanks, currentBank]);
 
-  // プリセット保存のmutation
+  useEffect(() => {
+    if (enabledSlots.length > 0 && !enabledSlots.includes(currentSlot)) {
+      setCurrentSlot(enabledSlots[0]);
+    }
+  }, [effectRecordingType, enabledSlots, currentSlot]);
+
+  const updateCurrentEffect = (updates: Partial<EffectConfig>) => {
+    if (!currentEffect) return;
+    
+    const updatedEffect = { ...currentEffect, ...updates };
+    setEffectGrid(setEffect(effectGrid, currentFxGroup, currentBank, currentSlot, updatedEffect));
+  };
+
+  const updateEffectType = (newEffectType: string) => {
+    if (!currentEffect) return;
+
+    const parameters = getEffectParameters(newEffectType);
+    const defaultParams: Record<string, any> = {};
+    parameters.forEach((param) => {
+      defaultParams[param.name] = param.defaultValue;
+    });
+
+    updateCurrentEffect({
+      effectType: newEffectType,
+      parameters: defaultParams,
+    });
+  };
+
+  const updateParameter = (paramName: string, value: any) => {
+    if (!currentEffect) return;
+    
+    updateCurrentEffect({
+      parameters: {
+        ...currentEffect.parameters,
+        [paramName]: value,
+      },
+    });
+  };
+
   const createPresetMutation = useMutation({
     mutationFn: async (data: any) => {
-      return fetch("/api/presets", {
+      const response = await fetch("/api/presets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
-        credentials: "include"
-      }).then(res => {
-        if (!res.ok) throw new Error("Failed to create preset");
-        return res.json();
       });
+      
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || "プリセットの作成に失敗しました");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
-      // キャッシュを更新
+      toast({
+        title: "プリセットを作成しました",
+        description: "プリセットが正常に保存されました。",
+      });
       queryClient.invalidateQueries({ queryKey: ["/api/presets"] });
+      navigate("/presets");
     },
-    onError: (error) => {
-      console.error("Create preset error:", error);
+    onError: (error: any) => {
+      toast({
+        title: "エラー",
+        description: error.message || "プリセットの作成に失敗しました。",
+        variant: "destructive",
+      });
     },
   });
 
-  // FXの更新関数
-  const updateEffect = (
-    position: EffectPosition,
-    updates: Partial<EffectConfig>,
-  ) => {
-    setEffects((prev) => ({
-      ...prev,
-      [position]: {
-        ...prev[position],
-        ...updates,
-      },
-    }));
-  };
-  
-  // INPUT FXの更新関数
-  const updateInputEffect = (
-    position: EffectPosition,
-    updates: Partial<EffectConfig>,
-  ) => {
-    setInputEffects((prev) => ({
-      ...prev,
-      [position]: {
-        ...prev[position],
-        ...updates,
-      },
-    }));
-  };
-  
-  // TRACK FXの更新関数
-  const updateTrackEffect = (
-    position: EffectPosition,
-    updates: Partial<EffectConfig>,
-  ) => {
-    setTrackEffects((prev) => ({
-      ...prev,
-      [position]: {
-        ...prev[position],
-        ...updates,
-      },
-    }));
-  };
-
-  // 通常モードでのエフェクトタイプ変更処理
-  const handleEffectTypeChange = (position: EffectPosition, value: string) => {
-    const effect = effects[position];
-    if (value === effect.effectType) return;
-
-    const parameters = getEffectParameters(value);
-    const defaultParams: Record<string, any> = {};
-    parameters.forEach((param) => {
-      defaultParams[param.name] = param.defaultValue;
-    });
-
-    updateEffect(position, {
-      effectType: value,
-      parameters: defaultParams,
-    });
-  };
-
-  // INPUT FXのエフェクトタイプ変更処理
-  const handleInputEffectTypeChange = (position: EffectPosition, value: string) => {
-    const effect = inputEffects[position];
-    if (value === effect.effectType) return;
-
-    const parameters = getEffectParameters(value);
-    const defaultParams: Record<string, any> = {};
-    parameters.forEach((param) => {
-      defaultParams[param.name] = param.defaultValue;
-    });
-
-    updateInputEffect(position, {
-      effectType: value,
-      parameters: defaultParams,
-    });
-  };
-
-  // TRACK FXのエフェクトタイプ変更処理
-  const handleTrackEffectTypeChange = (position: EffectPosition, value: string) => {
-    const effect = trackEffects[position];
-    if (value === effect.effectType) return;
-
-    const parameters = getEffectParameters(value);
-    const defaultParams: Record<string, any> = {};
-    parameters.forEach((param) => {
-      defaultParams[param.name] = param.defaultValue;
-    });
-
-    updateTrackEffect(position, {
-      effectType: value,
-      parameters: defaultParams,
-    });
-  };
-
-  // プリセットのバリデーション
-  const validatePreset = () => {
-    if (!presetName.trim()) {
-      toast({
-        title: "エラー",
-        description: "プリセット名を入力してください",
-        variant: "destructive",
-      });
-      return false;
-    }
-    return true;
-  };
-
-  // ログイン成功後にプリセットを保存する
-  const savePresetAfterLogin = () => {
-    if (!validatePreset()) return;
-
-    // Process tags
-    const tags = presetTags
-      .split(",")
-      .map((tag: string) => tag.trim())
-      .filter((tag: string) => tag !== "");
-
-    // Prepare effects data
-    let configuredEffects;
-    
-    if (fxType === "INPUT_TRACK_FX") {
-      // INPUT側のエフェクト
-      const inputConfiguredEffects = Object.values(inputEffects).filter(
-        (effect) => effect.effectType !== "none",
-      );
-      
-      // TRACK側のエフェクト
-      const trackConfiguredEffects = Object.values(trackEffects).filter(
-        (effect) => effect.effectType !== "none",
-      );
-      
-      // 両方を結合
-      configuredEffects = [...inputConfiguredEffects, ...trackConfiguredEffects];
-    } else {
-      // 通常のエフェクト
-      configuredEffects = Object.values(effects).filter(
-        (effect) => effect.effectType !== "none",
-      );
-    }
-
-    // パラメータをJSON文字列に変換
-    const effectsData = configuredEffects.map((effect) => {
-      let processedParameters;
-      
-      try {
-        if (typeof effect.parameters === 'string') {
-          const parsedParams = JSON.parse(effect.parameters);
-          processedParameters = JSON.stringify(parsedParams);
-        } else {
-          if (effect.parameters === null || effect.parameters === undefined) {
-            processedParameters = "{}";
-          } else {
-            processedParameters = JSON.stringify(effect.parameters);
-          }
-        }
-      } catch (e) {
-        console.error("パラメータ処理エラー:", {
-          position: effect.position,
-          parameters: effect.parameters,
-          error: e
-        });
-        processedParameters = "{}";
-      }
-      
-      return {
-        ...effect,
-        parameters: processedParameters,
-      };
-    });
-
-    // プリセットを保存
-    try {
-      createPresetMutation.mutate({
-        name: presetName,
-        type: fxType,
-        effects: effectsData,
-        tags,
-      }, {
-        onSuccess: () => {
-          toast({
-            title: "プリセット保存完了",
-            description: `プリセット "${presetName}" を保存しました`,
-            variant: "default",
-          });
-          navigate("/");
-        },
-        onError: (error: any) => {
-          console.error("プリセット保存エラー:", error);
-          toast({
-            title: "エラー",
-            description: "プリセットの保存に失敗しました",
-            variant: "destructive",
-          });
-        }
-      });
-    } catch (error) {
-      console.error("プリセット保存エラー:", error);
-      toast({
-        title: "エラー",
-        description: "プリセットの保存に失敗しました",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // フォーム送信ハンドラ
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 未ログインの場合はログインモーダルを表示
     if (!currentUser) {
-      if (validatePreset()) {
-        setIsLoginModalOpen(true);
-      }
+      setIsLoginModalOpen(true);
       return;
     }
 
-    // ログイン済みの場合はそのまま保存
-    savePresetAfterLogin();
+    const effectsArray = filterEnabledEffects(effectGrid, effectRecordingType).map(effect => ({
+      fxGroup: effect.fxGroup,
+      bank: effect.bank,
+      slot: effect.slot,
+      effectType: effect.effectType,
+      sw: effect.sw,
+      swMode: effect.swMode,
+      insert: effect.insert,
+      parameters: effect.parameters,
+    }));
+
+    const tagArray = presetTags
+      .split(",")
+      .map((tag: string) => tag.trim())
+      .filter((tag: string) => tag.length > 0);
+
+    createPresetMutation.mutate({
+      name: presetName,
+      type: presetType,
+      effectRecordingType,
+      tags: tagArray,
+      effects: effectsArray,
+    });
   };
 
-  return (
-    <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-      {/* ログインモーダル */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={() => setIsLoginModalOpen(false)}
-        onLoginSuccess={savePresetAfterLogin}
-        title="ログインが必要です"
-        description="プリセットを保存するにはログインまたは新規登録が必要です。"
-      />
+  const effectOptions = currentEffect 
+    ? getAppropriateEffectOptions(
+        presetType as any,
+        currentSlot
+      )
+    : [];
 
+  const effectParameters = currentEffect ? getEffectParameters(currentEffect.effectType) : [];
+
+  return (
+    <div className="container mx-auto py-8 px-4 max-w-5xl">
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)} 
+        onLoginSuccess={() => {
+          setIsLoginModalOpen(false);
+          handleSubmit(new Event('submit') as any);
+        }}
+      />
+      
       <div className="mb-6">
-        <Link
-          href="/"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          戻る
+        <Link href="/presets">
+          <Button variant="ghost" size="sm" className="mb-2" data-testid="button-back">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            戻る
+          </Button>
         </Link>
+        <h1 className="text-3xl font-bold">プリセット作成</h1>
+        <p className="text-muted-foreground mt-2">
+          RC505mk2のエフェクトプリセットを作成します
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold">
-            プリセット作成
-          </CardTitle>
-          <CardDescription>
-            RC-505mk2用のプリセットを作成します
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
-              <div className="sm:col-span-6">
-                <Label htmlFor="preset-name">プリセット名</Label>
-                <div className="mt-1">
-                  <Input
-                    id="preset-name"
-                    value={presetName}
-                    onChange={(e) => setPresetName(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-4">
-                <Label htmlFor="preset-tags">タグ（カンマ区切り）</Label>
-                <div className="mt-1">
-                  <Input
-                    id="preset-tags"
-                    placeholder="例: ボーカル, ハーモニー, ライブ"
-                    value={presetTags}
-                    onChange={(e) => setPresetTags(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="sm:col-span-6">
-                <Label>FXタイプ</Label>
-                <div className="mt-1">
-                  <RadioGroup
-                    value={fxType}
-                    onValueChange={(value) => {
-                      const newFxType = value as EffectType;
-                      setFxType(newFxType);
-                    }}
-                    className="flex space-x-6 flex-wrap"
-                  >
-                    <div className="flex items-center space-x-2 mr-4 mb-2">
-                      <RadioGroupItem value="INPUT_FX" id="input-fx" />
-                      <Label htmlFor="input-fx">INPUT FX</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 mr-4 mb-2">
-                      <RadioGroupItem value="TRACK_FX" id="track-fx" />
-                      <Label htmlFor="track-fx">TRACK FX</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 mb-2">
-                      <RadioGroupItem value="INPUT_TRACK_FX" id="input-track-fx" />
-                      <Label htmlFor="input-track-fx">INPUT FX & TRACK FX</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card data-testid="card-basic-info">
+          <CardHeader>
+            <CardTitle>基本情報</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="preset-name" data-testid="label-preset-name">
+                プリセット名 *
+              </Label>
+              <Input
+                id="preset-name"
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                placeholder="プリセット名を入力"
+                required
+                data-testid="input-preset-name"
+              />
             </div>
 
-            {/* Effect Tabs */}
-            <div className="mt-8">
-              {fxType === "INPUT_TRACK_FX" ? (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold">INPUT FXとTRACK FXの設定</h3>
-                  
-                  {/* 全8タブを横並びに配置 */}
-                  <div className="bg-muted/30 p-6 rounded-lg">
-                    <Tabs defaultValue="INPUT_A">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        {/* INPUT FX グループ */}
-                        <div className="bg-card p-4 rounded-lg shadow-sm">
-                          <h3 className="text-primary font-semibold mb-4 pb-2 border-b">INPUT FX</h3>
-                          <TabsList className="justify-start w-full">
-                            <TabsTrigger className="flex-1" value="INPUT_A">FX A</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="INPUT_B">FX B</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="INPUT_C">FX C</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="INPUT_D">FX D</TabsTrigger>
-                          </TabsList>
-                        </div>
-                        
-                        {/* TRACK FX グループ */}
-                        <div className="bg-card p-4 rounded-lg shadow-sm">
-                          <h3 className="text-primary font-semibold mb-4 pb-2 border-b">TRACK FX</h3>
-                          <TabsList className="justify-start w-full">
-                            <TabsTrigger className="flex-1" value="TRACK_A">FX A</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="TRACK_B">FX B</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="TRACK_C">FX C</TabsTrigger>
-                            <TabsTrigger className="flex-1" value="TRACK_D">FX D</TabsTrigger>
-                          </TabsList>
-                        </div>
-                      </div>
+            <div>
+              <Label htmlFor="preset-tags" data-testid="label-tags">
+                タグ（カンマ区切り）
+              </Label>
+              <Input
+                id="preset-tags"
+                value={presetTags}
+                onChange={(e) => setPresetTags(e.target.value)}
+                placeholder="例: ボーカル, リバーブ, ディレイ"
+                data-testid="input-tags"
+              />
+            </div>
 
-                      {/* INPUT FX タブコンテンツ */}
-                      {["A", "B", "C", "D"].map((position) => (
-                        <TabsContent key={`INPUT_${position}`} value={`INPUT_${position}`}>
-                          <div className="space-y-6">
-                            {/* エフェクトコントロールパネル */}
-                            <Collapsible className="bg-muted p-4 rounded-md mb-6">
-                              <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                                <h4 className="text-md font-medium">INPUT FX {position} - エフェクト設定</h4>
-                                <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="mt-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                  <div>
-                                    <Label className="mb-2">SW</Label>
-                                    <div className="flex items-center">
-                                      <Switch
-                                        checked={inputEffects[position as EffectPosition].sw}
-                                        onCheckedChange={(checked) =>
-                                          updateInputEffect(position as EffectPosition, {
-                                            sw: checked,
-                                          })
-                                        }
-                                      />
-                                      <span className="ml-2 text-sm text-muted-foreground">
-                                        {inputEffects[position as EffectPosition].sw ? "ON" : "OFF"}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label className="mb-2">SW MODE</Label>
-                                    <div className="flex space-x-4">
-                                      <RadioGroup
-                                        value={inputEffects[position as EffectPosition].swMode}
-                                        onValueChange={(value) =>
-                                          updateInputEffect(position as EffectPosition, {
-                                            swMode: value as SwitchMode,
-                                          })
-                                        }
-                                        className="flex space-x-4"
-                                      >
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem
-                                            value="TOGGLE"
-                                            id={`input-toggle-${position}`}
-                                          />
-                                          <Label htmlFor={`input-toggle-${position}`}>
-                                            TOGGLE
-                                          </Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem
-                                            value="MOMENT"
-                                            id={`input-moment-${position}`}
-                                          />
-                                          <Label htmlFor={`input-moment-${position}`}>
-                                            MOMENT
-                                          </Label>
-                                        </div>
-                                      </RadioGroup>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label className="mb-2">INSERT</Label>
-                                    <Select
-                                      value={inputEffects[position as EffectPosition].insert}
-                                      onValueChange={(value) =>
-                                        updateInputEffect(position as EffectPosition, {
-                                          insert: value as InsertType,
-                                        })
-                                      }
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Insert" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="ALL">ALL</SelectItem>
-                                        <SelectItem value="MIC1">MIC1</SelectItem>
-                                        <SelectItem value="MIC2">MIC2</SelectItem>
-                                        <SelectItem value="INST1">INST1</SelectItem>
-                                        <SelectItem value="INST2">INST2</SelectItem>
-                                        <SelectItem value="TRACK1">TRACK1</SelectItem>
-                                        <SelectItem value="TRACK2">TRACK2</SelectItem>
-                                        <SelectItem value="TRACK3">TRACK3</SelectItem>
-                                        <SelectItem value="TRACK4">TRACK4</SelectItem>
-                                        <SelectItem value="TRACK5">TRACK5</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-
-                            {/* パラメータカード表示 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                              {/* エフェクトタイプカード（左上） */}
-                              <div className="bg-muted p-4 rounded-md">
-                                <h4 className="font-medium mb-3">エフェクトタイプ</h4>
-                                <div>
-                                  <Select
-                                    value={inputEffects[position as EffectPosition].effectType}
-                                    onValueChange={(value) => handleInputEffectTypeChange(position as EffectPosition, value)}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="エフェクトを選択" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {getAppropriateEffectOptions("INPUT_FX", position as EffectPosition).map((effect) => (
-                                        <SelectItem key={effect.value} value={effect.value}>
-                                          {effect.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              {/* パラメータカード */}
-                              {getEffectParameters(
-                                inputEffects[position as EffectPosition].effectType
-                              ).map((param) => (
-                                <div key={param.name} className="bg-muted p-4 rounded-md">
-                                  <h4 className="font-medium mb-3">{param.name.split("_").pop()}</h4>
-                                  <ParameterInput
-                                    name={param.name}
-                                    config={param}
-                                    value={
-                                      inputEffects[position as EffectPosition].parameters[
-                                        param.name
-                                      ]
-                                    }
-                                    onChange={(name, value) => {
-                                      const updatedParams = {
-                                        ...inputEffects[position as EffectPosition].parameters,
-                                        [name]: value,
-                                      };
-                                      updateInputEffect(position as EffectPosition, {
-                                        parameters: updatedParams,
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </TabsContent>
-                      ))}
-
-                      {/* TRACK FX タブコンテンツ */}
-                      {["A", "B", "C", "D"].map((position) => (
-                        <TabsContent key={`TRACK_${position}`} value={`TRACK_${position}`}>
-                          <div className="space-y-6">
-                            {/* エフェクトコントロールパネル */}
-                            <Collapsible className="bg-muted p-4 rounded-md mb-6">
-                              <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                                <h4 className="text-md font-medium">TRACK FX {position} - エフェクト設定</h4>
-                                <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
-                              </CollapsibleTrigger>
-                              <CollapsibleContent className="mt-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                  <div>
-                                    <Label className="mb-2">SW</Label>
-                                    <div className="flex items-center">
-                                      <Switch
-                                        checked={trackEffects[position as EffectPosition].sw}
-                                        onCheckedChange={(checked) =>
-                                          updateTrackEffect(position as EffectPosition, {
-                                            sw: checked,
-                                          })
-                                        }
-                                      />
-                                      <span className="ml-2 text-sm text-muted-foreground">
-                                        {trackEffects[position as EffectPosition].sw ? "ON" : "OFF"}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label className="mb-2">SW MODE</Label>
-                                    <div className="flex space-x-4">
-                                      <RadioGroup
-                                        value={trackEffects[position as EffectPosition].swMode}
-                                        onValueChange={(value) =>
-                                          updateTrackEffect(position as EffectPosition, {
-                                            swMode: value as SwitchMode,
-                                          })
-                                        }
-                                        className="flex space-x-4"
-                                      >
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem
-                                            value="TOGGLE"
-                                            id={`track-toggle-${position}`}
-                                          />
-                                          <Label htmlFor={`track-toggle-${position}`}>
-                                            TOGGLE
-                                          </Label>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                          <RadioGroupItem
-                                            value="MOMENT"
-                                            id={`track-moment-${position}`}
-                                          />
-                                          <Label htmlFor={`track-moment-${position}`}>
-                                            MOMENT
-                                          </Label>
-                                        </div>
-                                      </RadioGroup>
-                                    </div>
-                                  </div>
-
-                                  <div>
-                                    <Label className="mb-2">INSERT</Label>
-                                    <Select
-                                      value={trackEffects[position as EffectPosition].insert}
-                                      onValueChange={(value) =>
-                                        updateTrackEffect(position as EffectPosition, {
-                                          insert: value as InsertType,
-                                        })
-                                      }
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Insert" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="ALL">ALL</SelectItem>
-                                        <SelectItem value="MIC1">MIC1</SelectItem>
-                                        <SelectItem value="MIC2">MIC2</SelectItem>
-                                        <SelectItem value="INST1">INST1</SelectItem>
-                                        <SelectItem value="INST2">INST2</SelectItem>
-                                        <SelectItem value="TRACK1">TRACK1</SelectItem>
-                                        <SelectItem value="TRACK2">TRACK2</SelectItem>
-                                        <SelectItem value="TRACK3">TRACK3</SelectItem>
-                                        <SelectItem value="TRACK4">TRACK4</SelectItem>
-                                        <SelectItem value="TRACK5">TRACK5</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                </div>
-                              </CollapsibleContent>
-                            </Collapsible>
-
-                            {/* パラメータカード表示 */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                              {/* エフェクトタイプカード（左上） */}
-                              <div className="bg-muted p-4 rounded-md">
-                                <h4 className="font-medium mb-3">エフェクトタイプ</h4>
-                                <div>
-                                  <Select
-                                    value={trackEffects[position as EffectPosition].effectType}
-                                    onValueChange={(value) => handleTrackEffectTypeChange(position as EffectPosition, value)}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="エフェクトを選択" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {getAppropriateEffectOptions("TRACK_FX", position as EffectPosition).map((effect) => (
-                                        <SelectItem key={effect.value} value={effect.value}>
-                                          {effect.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              {/* パラメータカード */}
-                              {getEffectParameters(
-                                trackEffects[position as EffectPosition].effectType
-                              ).map((param) => (
-                                <div key={param.name} className="bg-muted p-4 rounded-md">
-                                  <h4 className="font-medium mb-3">{param.name.split("_").pop()}</h4>
-                                  <ParameterInput
-                                    name={param.name}
-                                    config={param}
-                                    value={
-                                      trackEffects[position as EffectPosition].parameters[
-                                        param.name
-                                      ]
-                                    }
-                                    onChange={(name, value) => {
-                                      const updatedParams = {
-                                        ...trackEffects[position as EffectPosition].parameters,
-                                        [name]: value,
-                                      };
-                                      updateTrackEffect(position as EffectPosition, {
-                                        parameters: updatedParams,
-                                      });
-                                    }}
-                                  />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
-                  </div>
+            <div>
+              <Label data-testid="label-preset-type">プリセットタイプ *</Label>
+              <RadioGroup
+                value={presetType}
+                onValueChange={setPresetType}
+                className="mt-2"
+                data-testid="radio-preset-type"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="INPUT_FX" id="input-fx" data-testid="radio-input-fx" />
+                  <Label htmlFor="input-fx" className="font-normal">
+                    INPUT FX
+                  </Label>
                 </div>
-              ) : (
-                // 通常のINPUT FXまたはTRACK FX選択時のUI（既存のものを維持）
-                <Tabs defaultValue="A" onValueChange={(value) => setCurrentTab(value as EffectPosition)}>
-                  <TabsList className="mb-6">
-                    <TabsTrigger className="min-w-16" value="A">FX A</TabsTrigger>
-                    <TabsTrigger className="min-w-16" value="B">FX B</TabsTrigger>
-                    <TabsTrigger className="min-w-16" value="C">FX C</TabsTrigger>
-                    <TabsTrigger className="min-w-16" value="D">FX D</TabsTrigger>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="TRACK_FX" id="track-fx" data-testid="radio-track-fx" />
+                  <Label htmlFor="track-fx" className="font-normal">
+                    TRACK FX
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="INPUT_TRACK_FX" id="input-track-fx" data-testid="radio-input-track-fx" />
+                  <Label htmlFor="input-track-fx" className="font-normal">
+                    INPUT + TRACK FX
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div>
+              <Label data-testid="label-recording-type">エフェクト記録形式 *</Label>
+              <Select
+                value={effectRecordingType}
+                onValueChange={(value) => setEffectRecordingType(value as EffectRecordingType)}
+              >
+                <SelectTrigger data-testid="select-recording-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL_32" data-testid="option-all-32">
+                    {EFFECT_RECORDING_TYPE_LABELS.ALL_32}
+                  </SelectItem>
+                  <SelectItem value="INPUT_16" data-testid="option-input-16">
+                    {EFFECT_RECORDING_TYPE_LABELS.INPUT_16}
+                  </SelectItem>
+                  <SelectItem value="TRACK_16" data-testid="option-track-16">
+                    {EFFECT_RECORDING_TYPE_LABELS.TRACK_16}
+                  </SelectItem>
+                  <SelectItem value="FX4" data-testid="option-fx4">
+                    {EFFECT_RECORDING_TYPE_LABELS.FX4}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground mt-1">
+                保存するエフェクトスロットの範囲を選択します
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-effects">
+          <CardHeader>
+            <CardTitle>エフェクト設定</CardTitle>
+            <CardDescription>
+              3層のタブでエフェクトスロットを選択し、各スロットのエフェクトを設定します
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={currentFxGroup} onValueChange={(v) => setCurrentFxGroup(v as FxGroup)}>
+              <TabsList className="grid w-full grid-cols-2" data-testid="tabs-fx-group">
+                <TabsTrigger value="input" data-testid="tab-input-fx">
+                  INPUT FX
+                </TabsTrigger>
+                <TabsTrigger value="track" data-testid="tab-track-fx">
+                  TRACK FX
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="input" className="mt-4">
+                <Tabs value={currentBank} onValueChange={(v) => setCurrentBank(v as BankType)}>
+                  <TabsList className="grid w-full grid-cols-4 mb-4" data-testid="tabs-bank">
+                    {BANKS.map((bank) => (
+                      <TabsTrigger
+                        key={bank}
+                        value={bank}
+                        disabled={!enabledBanks.includes(bank)}
+                        data-testid={`tab-bank-${bank}`}
+                      >
+                        Bank {bank}
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
 
-                  {["A", "B", "C", "D"].map((position) => (
-                    <TabsContent key={position} value={position} className="mt-4">
-                      {/* エフェクトコントロールパネル */}
-                      <Collapsible className="bg-muted p-4 rounded-md mb-6">
-                        <CollapsibleTrigger className="flex items-center justify-between w-full group">
-                          <h4 className="text-md font-medium">エフェクト設定</h4>
-                          <ChevronDown className="h-6 w-6 transition-transform duration-200 text-primary group-data-[state=open]:rotate-180" />
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="mt-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            <div>
-                              <Label className="mb-2">SW</Label>
-                              <div className="flex items-center">
-                                <Switch
-                                  checked={effects[position as EffectPosition].sw}
-                                  onCheckedChange={(checked) =>
-                                    updateEffect(position as EffectPosition, {
-                                      sw: checked,
-                                    })
-                                  }
-                                />
-                                <span className="ml-2 text-sm text-muted-foreground">
-                                  {effects[position as EffectPosition].sw
-                                    ? "ON"
-                                    : "OFF"}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label className="mb-2">SW MODE</Label>
-                              <div className="flex space-x-4">
-                                <RadioGroup
-                                  value={
-                                    effects[position as EffectPosition].swMode
-                                  }
-                                  onValueChange={(value) =>
-                                    updateEffect(position as EffectPosition, {
-                                      swMode: value as SwitchMode,
-                                    })
-                                  }
-                                  className="flex space-x-4"
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                      value="TOGGLE"
-                                      id={`toggle-${position}`}
-                                    />
-                                    <Label htmlFor={`toggle-${position}`}>
-                                      TOGGLE
-                                    </Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <RadioGroupItem
-                                      value="MOMENT"
-                                      id={`moment-${position}`}
-                                    />
-                                    <Label htmlFor={`moment-${position}`}>
-                                      MOMENT
-                                    </Label>
-                                  </div>
-                                </RadioGroup>
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label className="mb-2">INSERT</Label>
-                              <Select
-                                value={effects[position as EffectPosition].insert}
-                                onValueChange={(value) =>
-                                  updateEffect(position as EffectPosition, {
-                                    insert: value as InsertType,
-                                  })
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Insert" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="ALL">ALL</SelectItem>
-                                  <SelectItem value="MIC1">MIC1</SelectItem>
-                                  <SelectItem value="MIC2">MIC2</SelectItem>
-                                  <SelectItem value="INST1">INST1</SelectItem>
-                                  <SelectItem value="INST2">INST2</SelectItem>
-                                  <SelectItem value="TRACK1">TRACK1</SelectItem>
-                                  <SelectItem value="TRACK2">TRACK2</SelectItem>
-                                  <SelectItem value="TRACK3">TRACK3</SelectItem>
-                                  <SelectItem value="TRACK4">TRACK4</SelectItem>
-                                  <SelectItem value="TRACK5">TRACK5</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </CollapsibleContent>
-                      </Collapsible>
-
-                      {/* パラメータカード表示 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        {/* エフェクトタイプカード（左上） */}
-                        <div className="bg-muted p-4 rounded-md">
-                          <h4 className="font-medium mb-3">エフェクトタイプ</h4>
-                          <div>
-                            <Select
-                              value={effects[position as EffectPosition].effectType}
-                              onValueChange={(value) => handleEffectTypeChange(position as EffectPosition, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="エフェクトを選択" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getAppropriateEffectOptions(fxType, position as EffectPosition).map((effect) => (
-                                  <SelectItem key={effect.value} value={effect.value}>
-                                    {effect.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        {/* パラメータカード */}
-                        {getEffectParameters(
-                          effects[position as EffectPosition].effectType
-                        ).map((param) => (
-                          <div key={param.name} className="bg-muted p-4 rounded-md">
-                            <h4 className="font-medium mb-3">{param.name.split("_").pop()}</h4>
-                            <ParameterInput
-                              name={param.name}
-                              config={param}
-                              value={
-                                effects[position as EffectPosition].parameters[
-                                  param.name
-                                ]
-                              }
-                              onChange={(name, value) => {
-                                const updatedParams = {
-                                  ...effects[position as EffectPosition].parameters,
-                                  [name]: value,
-                                };
-                                updateEffect(position as EffectPosition, {
-                                  parameters: updatedParams,
-                                });
-                              }}
-                            />
-                          </div>
+                  {BANKS.map((bank) => (
+                    <TabsContent key={bank} value={bank}>
+                      <div className="flex gap-2 mb-4" data-testid="slots-selector">
+                        {SLOTS.map((slot) => (
+                          <Button
+                            key={slot}
+                            type="button"
+                            variant={currentSlot === slot ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentSlot(slot)}
+                            disabled={!enabledSlots.includes(slot)}
+                            data-testid={`button-slot-${slot}`}
+                          >
+                            FX {slot}
+                          </Button>
                         ))}
                       </div>
                     </TabsContent>
                   ))}
                 </Tabs>
-              )}
-            </div>
+              </TabsContent>
 
-            <div className="flex justify-end mt-8 gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/")}
-              >
-                キャンセル
-              </Button>
-              <Button
-                type="submit"
-                disabled={!presetName.trim() || createPresetMutation.isPending}
-              >
-                {createPresetMutation.isPending
-                  ? "保存中..."
-                  : "プリセットを保存"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+              <TabsContent value="track" className="mt-4">
+                <Tabs value={currentBank} onValueChange={(v) => setCurrentBank(v as BankType)}>
+                  <TabsList className="grid w-full grid-cols-4 mb-4" data-testid="tabs-bank">
+                    {BANKS.map((bank) => (
+                      <TabsTrigger
+                        key={bank}
+                        value={bank}
+                        disabled={!enabledBanks.includes(bank)}
+                        data-testid={`tab-bank-${bank}`}
+                      >
+                        Bank {bank}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  {BANKS.map((bank) => (
+                    <TabsContent key={bank} value={bank}>
+                      <div className="flex gap-2 mb-4" data-testid="slots-selector">
+                        {SLOTS.map((slot) => (
+                          <Button
+                            key={slot}
+                            type="button"
+                            variant={currentSlot === slot ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentSlot(slot)}
+                            disabled={!enabledSlots.includes(slot)}
+                            data-testid={`button-slot-${slot}`}
+                          >
+                            FX {slot}
+                          </Button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </TabsContent>
+            </Tabs>
+
+            {currentEffect && (
+              <Card className="mt-4" data-testid="card-effect-config">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {currentFxGroup === "input" ? "INPUT" : "TRACK"} FX - Bank {currentBank} - FX {currentSlot}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="effect-sw" data-testid="label-effect-sw">
+                      エフェクトON/OFF
+                    </Label>
+                    <Switch
+                      id="effect-sw"
+                      checked={currentEffect.sw}
+                      onCheckedChange={(checked) => updateCurrentEffect({ sw: checked })}
+                      data-testid="switch-effect-sw"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="effect-type" data-testid="label-effect-type">
+                      エフェクトタイプ
+                    </Label>
+                    <Select
+                      value={currentEffect.effectType}
+                      onValueChange={updateEffectType}
+                    >
+                      <SelectTrigger id="effect-type" data-testid="select-effect-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {effectOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value} data-testid={`option-${option.value}`}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="switch-mode" data-testid="label-switch-mode">
+                      スイッチモード
+                    </Label>
+                    <Select
+                      value={currentEffect.swMode}
+                      onValueChange={(value) => updateCurrentEffect({ swMode: value as SwitchMode })}
+                    >
+                      <SelectTrigger id="switch-mode" data-testid="select-switch-mode">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TOGGLE" data-testid="option-toggle">TOGGLE</SelectItem>
+                        <SelectItem value="MOMENT" data-testid="option-moment">MOMENT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="insert-type" data-testid="label-insert-type">
+                      インサートタイプ
+                    </Label>
+                    <Select
+                      value={currentEffect.insert}
+                      onValueChange={(value) => updateCurrentEffect({ insert: value as InsertType })}
+                    >
+                      <SelectTrigger id="insert-type" data-testid="select-insert-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ALL" data-testid="option-all">ALL</SelectItem>
+                        <SelectItem value="MIC1" data-testid="option-mic1">MIC1</SelectItem>
+                        <SelectItem value="MIC2" data-testid="option-mic2">MIC2</SelectItem>
+                        <SelectItem value="INST1" data-testid="option-inst1">INST1</SelectItem>
+                        <SelectItem value="INST2" data-testid="option-inst2">INST2</SelectItem>
+                        <SelectItem value="TRACK1" data-testid="option-track1">TRACK1</SelectItem>
+                        <SelectItem value="TRACK2" data-testid="option-track2">TRACK2</SelectItem>
+                        <SelectItem value="TRACK3" data-testid="option-track3">TRACK3</SelectItem>
+                        <SelectItem value="TRACK4" data-testid="option-track4">TRACK4</SelectItem>
+                        <SelectItem value="TRACK5" data-testid="option-track5">TRACK5</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {effectParameters.length > 0 && (
+                    <Collapsible defaultOpen>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between"
+                          type="button"
+                          data-testid="button-toggle-parameters"
+                        >
+                          <span>パラメータ設定 ({effectParameters.length}個)</span>
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 mt-4">
+                        {effectParameters.map((param) => (
+                          <div key={param.name}>
+                            <Label htmlFor={param.name} data-testid={`label-${param.name}`}>
+                              {param.display_name || param.name}
+                            </Label>
+                            <ParameterInput
+                              name={param.name}
+                              config={param}
+                              value={currentEffect.parameters[param.name]}
+                              onChange={(name, value) => updateParameter(name, value)}
+                            />
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-4">
+          <Button
+            type="submit"
+            disabled={!presetName || createPresetMutation.isPending}
+            className="flex-1"
+            data-testid="button-submit"
+          >
+            {createPresetMutation.isPending ? "作成中..." : "プリセットを作成"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/presets")}
+            data-testid="button-cancel"
+          >
+            キャンセル
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }
