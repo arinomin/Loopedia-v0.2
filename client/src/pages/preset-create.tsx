@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -76,12 +76,25 @@ export default function PresetCreate() {
           .join(", ")
       : "",
   );
-  const [presetType, setPresetType] = useState<string>(
-    sourcePreset ? sourcePreset.type : "INPUT_FX",
-  );
   const [effectRecordingType, setEffectRecordingType] = useState<EffectRecordingType>(
     sourcePreset?.effectRecordingType || "ALL_32"
   );
+
+  // Auto-determine preset type from effect recording type
+  const presetType = (() => {
+    switch (effectRecordingType) {
+      case "ALL_32":
+        return "INPUT_TRACK_FX";
+      case "INPUT_16":
+        return "INPUT_FX";
+      case "TRACK_16":
+        return "TRACK_FX";
+      case "FX4":
+        return "INPUT_TRACK_FX";
+      default:
+        return "INPUT_TRACK_FX";
+    }
+  })();
 
   const [effectGrid, setEffectGrid] = useState<EffectGrid>(() => {
     if (sourcePreset && sourcePreset.effects && sourcePreset.effects.length > 0) {
@@ -274,35 +287,6 @@ export default function PresetCreate() {
                 placeholder="例: ボーカル, リバーブ, ディレイ"
                 data-testid="input-tags"
               />
-            </div>
-
-            <div>
-              <Label data-testid="label-preset-type">プリセットタイプ *</Label>
-              <RadioGroup
-                value={presetType}
-                onValueChange={setPresetType}
-                className="mt-2"
-                data-testid="radio-preset-type"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="INPUT_FX" id="input-fx" data-testid="radio-input-fx" />
-                  <Label htmlFor="input-fx" className="font-normal">
-                    INPUT FX
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="TRACK_FX" id="track-fx" data-testid="radio-track-fx" />
-                  <Label htmlFor="track-fx" className="font-normal">
-                    TRACK FX
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="INPUT_TRACK_FX" id="input-track-fx" data-testid="radio-input-track-fx" />
-                  <Label htmlFor="input-track-fx" className="font-normal">
-                    INPUT + TRACK FX
-                  </Label>
-                </div>
-              </RadioGroup>
             </div>
 
             <div>
