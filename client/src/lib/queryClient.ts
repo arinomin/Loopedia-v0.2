@@ -180,11 +180,14 @@ export const verifyAuthState = async (): Promise<any> => {
       }
     });
     
-    const userData = await response.json();
-    console.log("認証状態検証結果:", userData);
+    const result = await response.json();
+    console.log("認証状態検証結果:", result);
+    
+    // resultがnullまたは{user: null}の場合は、nullを返す
+    const userData = result?.user || null;
     
     // クエリキャッシュを更新
-    queryClient.setQueryData(["/api/auth/me"], userData);
+    queryClient.setQueryData(["/api/auth/me"], result);
     return userData;
   } catch (error) {
     console.error("認証状態検証エラー:", error);
